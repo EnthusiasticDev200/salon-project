@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stylist Socket</title>
+    <h1>KhleanCutz</h1>
+</head>
+
+<body>
+    <p>Trying out Notification System</p>
+   
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+  const socket = io("http://localhost:3100"); // your backend Socket.IO server
+
+  const stylistUsername = "timz"; // replace with actual logged-in stylist
+
+  // Join room
+  socket.emit("joinStylistRoom", stylistUsername);
+
+  // Listen for notification
+  socket.on("appointmentNotification", (data) => {
+    alert(`New appointment from ${data.customerName} on ${data.date} at ${data.time} for ${data.style}`);
+  });
+</script>
+</body>
+</html>
+
+

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Stylist</title>
+    <style>
+        label,input{
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h2> Register Stylist</h2>
+    <form id="regStylist"> 
+        <label for="firstName"> First Name</label>
+        <input type="text" id="firstName" name="firstName" required>
+
+        <label for="lastName"> Last Name</label>
+        <input type="text" id="lastName" name="lastName" required>
+
+        <label for="username"> Username</label>
+        <input type="text" id="username" name="username" required>
+
+        <label for="email"> Email</label>
+        <input type="email" id="email" name="email" required>
+
+        <label for="phoneNumber"> Phone Number</label>
+        <input type="text" id="phoneNumber" name="phoneNumber" required>
+
+        <label for="psw"> Password</label>
+        <input type="password" id="psw" name="psw" required>
+
+        <label for="spec"> Specialization</label>
+        <input type="text" id="spec" name="spec" required>
+
+
+        <button type="submit"> Register</button>
+    </form>
+
+    <script>
+        document.getElementById('regStylist').addEventListener('submit', async function(event){
+            event.preventDefault();
+
+            const firstName = document.getElementById('firstName').value
+            const lastName = document.getElementById('lastName').value
+            const username = document.getElementById('username').value
+            const email = document.getElementById('email').value
+            const phoneNumber = document.getElementById('phoneNumber').value
+            const password = document.getElementById('psw').value
+            const specialization = document.getElementById('spec').value
+
+        try{
+            const body = {firstName, lastName, username,email, phoneNumber, password, specialization}
+            const response = await fetch('/auth/stylist/register', {
+                method : "POST",
+                headers : {
+                    'Content-Type' : 'application/json'
+                },
+                body : JSON.stringify(body)
+            });
+
+            const data = await response.json()
+
+            if(response.ok){
+                console.log("Server response", data)
+                alert("Stylist successfully registered")
+                window.location.reload()
+            }else{
+                alert(`Error:${data.message} `)
+            }
+
+        }catch(error){
+            console.log("Error registering stylist", error.message)
+        }
+
+        });
+    </script>
+    
+</body>
+</html>

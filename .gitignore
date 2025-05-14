@@ -1,0 +1,7 @@
+.env
+sample.js
+sampleHTML.html
+workingCustomerlogic.js
+unmodifiedLoginCustomer.html
+*.json
+/node_modules
