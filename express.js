@@ -7,19 +7,12 @@ const path = require('path');
 const http = require('http')
 const app = express()
 const server = http.createServer(app)
-const {Server} = require('socket.io')
 const {initSocket} = require('./backend/socketHandler')
 
 
 
 
-const io = new Server(server, {
-    cors: {
-        origin: 'http://localhost:3100',
-        credentials: true
-    }
-});
-initSocket(io); // initializing initSocket
+initSocket(server); // initializing initSocket
 
 const port = 3100
 
@@ -93,19 +86,7 @@ app.get('/salon/createap', (req, res)=>{
     res.sendFile(path.join(__dirname, '/frontend/appointments/createAp.html'))
 })
 
-//create  connection
-io.on('connection', (socket)=>{
-    console.log('A new user connected', socket.id)
-    
-    socket.on('joinStylistRoom', (stylistUsername)=>{
-        socket.join(stylistUsername) // stylist join room via username
-        console.log(`Stylist ${stylistUsername} joined stylist room`)
-    })
 
-    socket.on('disconnect', ()=>{
-        console.log('User disconnected', socket.id)
-    })
-})
 
 // // io.on('connection', (socket) => {
 // //     console.log('A user connected:', socket.id);

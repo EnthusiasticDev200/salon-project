@@ -313,7 +313,7 @@ exports.logInCustomer =  async (req, res)=>{
         // Now customer is a user. Create jwt
         const user = customer[0]
         const token = jwt.sign({userId:user.customer_id, username:user.username }, process.env.JWT_SECRET, {expiresIn:'1h'})
-        console.log("Generated Token: ", token)
+        
         
         //setting up cookie 
         res.cookie('token', token, {
