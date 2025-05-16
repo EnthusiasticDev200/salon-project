@@ -77,9 +77,7 @@ app.get('/salon/regstylist', (req, res)=>{
 app.get('/salon/loginstylist', (req,res)=>{
     res.sendFile(path.join(__dirname, '/frontend/stylists/loginStylist.html'))
 })
-app.get('/salon/beepstylist', (req,res)=>{
-    res.sendFile(path.join(__dirname, '/frontend/stylists/stylistSocket.html'))
-})
+
 
 //route for appointment booking  html
 app.get('/salon/createap', (req, res)=>{

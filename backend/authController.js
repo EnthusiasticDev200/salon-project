@@ -234,7 +234,7 @@ async function findStylistByEmail(email) {
     try{
         const [queryStylist] = await db.query("SELECT * FROM stylists WHERE email=?",[email])
     if(queryStylist.length === 0){
-        return "Stylist not found"; //throw new Error("Admin not found") don't throw error
+        return "Stylist not found"; //throw new Error("Stylist not found") don't throw error
     }
     return queryStylist[0]
     }catch(error){
