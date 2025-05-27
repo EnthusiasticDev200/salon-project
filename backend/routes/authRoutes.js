@@ -16,7 +16,7 @@ const
     adminTable,registerAdmin, logInAdmin,logoutAdmin,changeAdminPassword,
     customerTable, registerCustomer, logInCustomer, getCustomerProfile,logoutCustomer,
     stylistTable, registerStylist,loginStylist, logoutStylist,
-    serviceTable,createServices,
+    serviceTable,createServices,viewServices,
     appointmentTable, createAppointment,
     
 } = require('../authController')
@@ -48,6 +48,7 @@ router.get('/customer/profile/logout', authenticateJWT,logoutCustomer)
 
 //service's endpoint
 router.post('/service/create', authenticateJWT, requireSuperuser,createServices) // 
+router.get('/service/view', viewServices)
 
 // stylist endpoint 
 router.post('/stylist/register', validateStylist,registerStylist)

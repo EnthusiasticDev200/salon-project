@@ -378,6 +378,13 @@ exports.createServices = async (req, res)=>{
     
 }
 
+exports.viewServices = async (req, res)=>{
+    const [getSerivices] = await db.query("SELECT hair_style, price FROM services")
+    console.log("services", getSerivices)
+    return res.status(200).send(getSerivices)
+    
+    
+}
 // stylist logic
 exports.registerStylist = async (req, res)=>{
     
