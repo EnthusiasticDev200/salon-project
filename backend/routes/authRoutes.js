@@ -15,9 +15,9 @@ const
 {
     adminTable,registerAdmin, logInAdmin,logoutAdmin,changeAdminPassword,
     customerTable, registerCustomer, logInCustomer, getCustomerProfile,logoutCustomer,viewCustomers,
-    stylistTable, registerStylist,loginStylist, logoutStylist,
+    stylistTable, registerStylist,loginStylist, logoutStylist,viewStylists,
     serviceTable,createServices,viewServices,
-    appointmentTable, createAppointment,
+    appointmentTable, createAppointment, viewAppointments,
     
 } = require('../authController')
 
@@ -54,9 +54,10 @@ router.get('/service/view', authenticateJWT, requireSuperuser,viewServices)
 router.post('/stylist/register', validateStylist,registerStylist)
 router.post('/stylist/login',loginStylist)
 router.get('/stylist/logout', authenticateJWT,logoutStylist)
+router.get('/stylist/view', authenticateJWT, requireSuperuser, viewStylists)
 
 //appointment endpoint
-
 router.post('/appointment/create', validateAppointment,authenticateJWT, createAppointment)
+router.get('/appointment/view', authenticateJWT, requireSuperuser,viewAppointments)
 
 module.exports = router

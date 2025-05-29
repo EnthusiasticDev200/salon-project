@@ -357,10 +357,16 @@ exports.logoutCustomer = async(req, res)=>{
 }
 
 exports.viewCustomers = async (req, res)=>{
-    const [getCustomer] = await db.query
-    ("SELECT first_name, last_name, username, email, phone_number FROM customers")
-    console.log("services", getCustomer)
-    return res.status(200).send(getCustomer)   
+    try{
+        const [getCustomer] = await db.query
+        ("SELECT first_name, last_name, username, email, phone_number FROM customers")
+        console.log("services", getCustomer)
+        return res.status(200).send(getCustomer)
+    }catch(err){
+        console.error("Gettng customers failed", err)
+        res.status(500).json({message: 'Error fetching customers', err:err.stack})
+    }
+       
 }
 
 //services logic
@@ -463,6 +469,19 @@ exports.logoutStylist = async (req, res)=>{
     }
     
 }
+exports.viewStylists = async (req, res)=>{
+    try{
+        const [getStylists] = await db.query
+        ("SELECT first_name, last_name, username, email, phone_number FROM stylists")
+        console.log("stylists", getStylists)
+        return res.status(200).send(getStylists)   
+    }catch(err){
+        console.error("Getting stylists failed", err)
+        return res.status(500).json({message:"Error fetching stylists", err:err.stack})
+    }
+    
+}
+
 
 //appointments logic
 exports.createAppointment = async (req, res) =>{
@@ -525,4 +544,15 @@ exports.createAppointment = async (req, res) =>{
 
 }
 
-;
+exports.viewAppointments = async (req, res)=>{
+    try{
+        const getAppointments = await db.query
+        ("SELECT c.first_name AS customer_first_name, c.last_name AS customer_last_name, s.username AS stylist_username, serv.hair_style AS hair_style, appointment_date, appointment_time,status FROM appointments JOIN customers c USING(customer_id)JOIN stylists s USING(stylist_id) JOIN services serv USING(service_id)")
+        console.log("appointment", getAppointments)
+        return res.status(200).send(getAppointments)
+    }catch(err){
+        console.error("Getting appointments failed", err)
+        return res.status(500).json({message:"Error fetching appointments", err:err.stack})
+    }
+    
+}
