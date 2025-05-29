@@ -14,7 +14,7 @@ const
 const
 {
     adminTable,registerAdmin, logInAdmin,logoutAdmin,changeAdminPassword,
-    customerTable, registerCustomer, logInCustomer, getCustomerProfile,logoutCustomer,
+    customerTable, registerCustomer, logInCustomer, getCustomerProfile,logoutCustomer,viewCustomers,
     stylistTable, registerStylist,loginStylist, logoutStylist,
     serviceTable,createServices,viewServices,
     appointmentTable, createAppointment,
@@ -44,11 +44,11 @@ router.post('/customer/login',logInCustomer)
 //customer's protected routes
 router.get("/customer/login/profile", authenticateJWT, getCustomerProfile) 
 router.get('/customer/profile/logout', authenticateJWT,logoutCustomer)
-
+router.get('/customer/view', authenticateJWT,requireSuperuser, viewCustomers)
 
 //service's endpoint
 router.post('/service/create', authenticateJWT, requireSuperuser,createServices) // 
-router.get('/service/view', viewServices)
+router.get('/service/view', authenticateJWT, requireSuperuser,viewServices)
 
 // stylist endpoint 
 router.post('/stylist/register', validateStylist,registerStylist)

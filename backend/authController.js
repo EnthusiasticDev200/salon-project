@@ -356,6 +356,13 @@ exports.logoutCustomer = async(req, res)=>{
     }
 }
 
+exports.viewCustomers = async (req, res)=>{
+    const [getCustomer] = await db.query
+    ("SELECT first_name, last_name, username, email, phone_number FROM customers")
+    console.log("services", getCustomer)
+    return res.status(200).send(getCustomer)   
+}
+
 //services logic
 exports.createServices = async (req, res)=>{
     const {hairStyle, price} = req.body
