@@ -27,6 +27,7 @@ const
 
 //creating tables endpoints
 router.get('/admins/table', authenticateJWT, requireSuperuser, adminTable)
+// router.get('/admins/table', adminTable)
 router.get('/customers/table',  authenticateJWT, requireSuperuser, customerTable)
 router.get('/stylists/table',  authenticateJWT, requireSuperuser, stylistTable)
 router.get('/services/table',  authenticateJWT, requireSuperuser, serviceTable)

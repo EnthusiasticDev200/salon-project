@@ -6,10 +6,17 @@ let io = null
 
 function initSocket(server){
     const {Server} = require('socket.io')
+    const allowedOrigins = ["http://localhost:3100", "http://localhost:5173"];
 
     io = new Server(server, {
         cors : {
-            origin: "http://localhost:3100",
+            origin: (origin, callback) => {
+                if (!origin || allowedOrigins.includes(origin)) {
+                  callback(null, true);
+                } else {
+                  callback(new Error("Not allowed by CORS"));
+                }
+            },
             methods: ["GET", "POST"],
             credentials: true
         }
@@ -38,4 +45,4 @@ function notifyStylist(stylistUsername, appointmentData){
     }
 
 }
-module.exports ={ notifyStylist, initSocket}
+module.exports = { notifyStylist, initSocket }

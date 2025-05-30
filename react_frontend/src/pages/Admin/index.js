@@ -1,0 +1,6 @@
+export { default as ADashboard } from './ADashboard'
+export { default as AddService } from './AddService'
+export { default as AddStylist } from './AddStylist'
+export { default as ALogin } from './ALogin'
+export { default as ARegister } from './ARegister'
+export { default as Services } from './Services'

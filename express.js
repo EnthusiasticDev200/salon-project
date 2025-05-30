@@ -1,13 +1,20 @@
 const express = require('express')
 const cookieParser = require('cookie-parser')
 require('dotenv').config();
+const cors = require('cors');
 const authRoutes = require('./backend/routes/authRoutes')
 const path = require('path');
 // const { authenticateJWT } = require('./middlewares/auth');
+const app = express();
 const http = require('http')
-const app = express()
 const server = http.createServer(app)
 const {initSocket} = require('./backend/socketHandler')
+
+app.use(cors({
+  origin: 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
 
 
 
