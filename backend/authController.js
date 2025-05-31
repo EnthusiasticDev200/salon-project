@@ -10,7 +10,7 @@ const { notifyStylist } = require('./socketHandler');
 dotenv.config()
 
 
-//creating tables for admin, customer, stylist, services, appointments
+//creating tables for admin, customer, stylist, services, appointments, and reviews
 //use replace salon with /auth/ in url when hitting table endpoints
 exports.adminTable = async(req, res)=>{
     const createAdminTable = `
@@ -32,7 +32,7 @@ exports.adminTable = async(req, res)=>{
         return res.status(500).send("Error creating admuns's table")
         
     }
-    }
+}
 exports.customerTable = async(req, res)=>{
 const createCustomerTable = `
     CREATE TABLE IF NOT EXISTS customers(
@@ -127,6 +127,35 @@ try{
 }catch(error){
     console.log("Appointment table not created", error.stack)
     return res.status(500).send("Appointment table creation failed.")
+
+}
+}
+
+exports.reviewTable = async(req,res)=>{
+    const createReviewTable = `
+        CREATE TABLE IF NOT EXISTS reviews(
+            review_id INT AUTO_INCREMENT PRIMARY KEY,
+            customer_id INT NOT NULL,
+            service_id INT NOT NULL,
+            rating TINYINT CHECK (rating BETWEEN 1 AND 5),
+            feedback TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY fk_reviews_customers(customer_id)
+            REFERENCES customers(customer_id)
+                ON UPDATE CASCADE
+                ON DELETE CASCADE,
+            FOREIGN KEY fk_reviews_services(service_id)
+            REFERENCES services(service_id)
+                ON UPDATE CASCADE
+                ON DELETE CASCADE
+        )
+    `
+try{
+    await db.query(createReviewTable)
+    res.status(200).send("Review table successfully created")
+}catch(error){
+    console.log("Review's table not created", error.stack)
+    return res.status(500).send("Review's table creation failed.")
 
 }
 }
@@ -284,10 +313,12 @@ exports.registerCustomer = async (req, res)=>{
             return res.status(400).json({message:"Customer already exist"})
         };
         const hashedPassword = await bcrypt.hash(password, 10)
-        await db.query
-        (`INSERT INTO customers(first_name, last_name, username, email, phone_number, password_hash) VALUE(?,?,?,?,?,?)`,
-        [firstName, lastName, username, email, phoneNumber, hashedPassword])
-        
+        await db.query(`
+            INSERT INTO 
+                customers(first_name, last_name, username, email, phone_number, password_hash) 
+                VALUE(?,?,?,?,?,?)`,
+                [firstName, lastName, username, email, phoneNumber, hashedPassword]
+        )
         res.status(201).json({message:"Customer successfully created"});
     }catch(error){
         res.status(500).json({message:'Error registering customer', error})
@@ -356,6 +387,19 @@ exports.logoutCustomer = async(req, res)=>{
     }
 }
 
+exports.viewCustomers = async (req, res)=>{
+    try{
+        const [getCustomer] = await db.query
+        ("SELECT customer_id, first_name, last_name, username, email, phone_number FROM customers")
+        console.log("services", getCustomer)
+        return res.status(200).json(getCustomer)
+    }catch(err){
+        console.error("Gettng customers failed", err)
+        res.status(500).json({message: 'Error fetching customers', err:err.stack})
+    }
+       
+}
+
 //services logic
 exports.createServices = async (req, res)=>{
     const {hairStyle, price} = req.body
@@ -378,6 +422,13 @@ exports.createServices = async (req, res)=>{
     
 }
 
+exports.viewServices = async (req, res)=>{
+    const [getSerivices] = await db.query("SELECT * FROM services")
+    console.log("services", getSerivices)
+    return res.status(200).send(getSerivices)
+    
+    
+}
 // stylist logic
 exports.registerStylist = async (req, res)=>{
     
@@ -393,10 +444,12 @@ exports.registerStylist = async (req, res)=>{
             return res.status(400).json({message:"STylist alrady exist"})
     };
     const hashedPassword = await bcrypt.hash(password, 10)
-    await db.query
-    (`INSERT INTO stylists(first_name, last_name, username, email, phone_number, password_hash, specialization) VALUE(?,?,?,?,?,?,?)`,
-    [firstName, lastName, username, email, phoneNumber, hashedPassword, specialization])
-        
+    await db.query(`
+        INSERT INTO 
+            stylists(first_name, last_name, username, email, phone_number, password_hash, specialization) 
+            VALUE(?,?,?,?,?,?,?)`,
+            [firstName, lastName, username, email, phoneNumber, hashedPassword, specialization]
+    )    
     res.status(201).json({message:"Stylist successfully created"});
     }catch(error){
         res.status(500).json({message:'Error registering stylist', error})
@@ -449,6 +502,19 @@ exports.logoutStylist = async (req, res)=>{
     }
     
 }
+exports.viewStylists = async (req, res)=>{
+    try{
+        const [getStylists] = await db.query
+        ("SELECT stylist_id, first_name, last_name, username, email, phone_number FROM stylists")
+        console.log("stylists", getStylists)
+        return res.status(200).send(getStylists)   
+    }catch(err){
+        console.error("Getting stylists failed", err)
+        return res.status(500).json({message:"Error fetching stylists", err:err.stack})
+    }
+    
+}
+
 
 //appointments logic
 exports.createAppointment = async (req, res) =>{
@@ -470,28 +536,54 @@ exports.createAppointment = async (req, res) =>{
             return res.status(401).json({message:"Invalid stylist username"})
         }
         
-        const [queryService] = await db.query("SELECT * FROM services WHERE hair_style = ?", [hairStyle])
+        const [queryService] = await db.query(`
+            SELECT * 
+                FROM services 
+                WHERE hair_style = ?`, 
+                [hairStyle]
+        )
         if(queryService.length === 0){
             return res.status(401).json({message:"We don't offer this service, pase check the service menu."})
         }
         //check existing Ap for data integrity
         const apCheckValue = [queryCustomer[0].customer_id]
-        const [checkAppointment] = await db.query
-        ("SELECT * FROM appointments WHERE customer_id =? AND appointment_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)",apCheckValue)
+        const [checkAppointment] = await db.query(`
+            SELECT * 
+                FROM 
+                appointments 
+                WHERE customer_id =? 
+                AND appointment_date BETWEEN CURDATE() 
+                AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)`,
+            apCheckValue
+        )
         if(checkAppointment.length > 0){
             console.log("appointmentDetails", checkAppointment)
             return res.status(400).json({message:"Appointment already booked for the week"});
         }
-        const [checkStylistSpec] = await db.query
-        ("SELECT username, specialization FROM stylists WHERE username =? AND FIND_IN_SET (?, REPLACE(specialization, ' ','')) > 0", [stylistUsername, hairStyle])
+        const [checkStylistSpec] = await db.query(`
+            SELECT 
+                username, specialization 
+                FROM stylists 
+                WHERE 
+                username =? AND FIND_IN_SET (?, REPLACE(specialization, ' ','')) > 0`, 
+                [stylistUsername, hairStyle]
+        )
         if(checkStylistSpec.length === 0){
             console.log("stylistSpec: ", checkStylistSpec)
             return res.status(401).json({message:"Not stylist's area of specialty"})
         }
         const apValue = [queryCustomer[0].customer_id,queryStylist[0].stylist_id, queryService[0].service_id, appointmentDate, appointmentTime, 'pending']
-        await db.query
-        ("INSERT INTO appointments(customer_id, stylist_id, service_id, appointment_date, appointment_time,status) VALUES (?, ?, ?, ?, ?, ?)", apValue)
-        const appointmentData = {
+        await db.query(`
+            INSERT INTO appointments
+            (
+                customer_id, stylist_id, service_id, 
+                appointment_date, appointment_time,status
+            ) 
+            VALUES (?, ?, ?, ?, ?, ?)`,
+            apValue
+        )    
+        const appointmentData = 
+        {
             customerName : queryCustomer[0].firstName + ' ' + queryCustomer[0].lastName,
             date : appointmentDate,
             time : appointmentTime,
@@ -511,4 +603,27 @@ exports.createAppointment = async (req, res) =>{
 
 }
 
-;
+exports.viewAppointments = async (req, res)=>{
+    try{
+        const [getAppointments] = await db.query(`
+            SELECT 
+                appointment_id, 
+                c.first_name AS customer_first_name, c.last_name AS customer_last_name, 
+                s.username AS stylist_username, 
+                serv.hair_style AS hair_style, 
+                DATE_FORMAT(appointment_date, '%Y-%m-%d') AS appointment_date,
+                TIME_FORMAT(appointment_time, '%H:%i') AS appointment_time,
+                status 
+                FROM appointments 
+                JOIN customers c USING(customer_id)
+                JOIN stylists s USING(stylist_id) 
+                JOIN services serv USING(service_id)
+        `)
+        console.log("appointment", getAppointments)
+        return res.status(200).json(getAppointments)
+    }catch(err){
+        console.error("Getting appointments failed", err)
+        return res.status(500).json({message:"Error fetching appointments", err:err.stack})
+    }
+    
+}
