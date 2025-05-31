@@ -18,6 +18,7 @@ const
     stylistTable, registerStylist,loginStylist, logoutStylist,viewStylists,
     serviceTable,createServices,viewServices,
     appointmentTable, createAppointment, viewAppointments,
+    reviewTable
     
 } = require('../authController')
 
@@ -31,6 +32,7 @@ router.get('/customers/table',  authenticateJWT, requireSuperuser, customerTable
 router.get('/stylists/table',  authenticateJWT, requireSuperuser, stylistTable)
 router.get('/services/table',  authenticateJWT, requireSuperuser, serviceTable)
 router.get('/appointments/table',  authenticateJWT, requireSuperuser, appointmentTable)
+router.get('/reviews/table', authenticateJWT, requireSuperuser, reviewTable)
 
 //admin's endpoints 
 router.post('/admin/register', validateAdmin, registerAdmin)

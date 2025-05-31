@@ -10,7 +10,7 @@ const { notifyStylist } = require('./socketHandler');
 dotenv.config()
 
 
-//creating tables for admin, customer, stylist, services, appointments
+//creating tables for admin, customer, stylist, services, appointments, and reviews
 //use replace salon with /auth/ in url when hitting table endpoints
 exports.adminTable = async(req, res)=>{
     const createAdminTable = `
@@ -32,7 +32,7 @@ exports.adminTable = async(req, res)=>{
         return res.status(500).send("Error creating admuns's table")
         
     }
-    }
+}
 exports.customerTable = async(req, res)=>{
 const createCustomerTable = `
     CREATE TABLE IF NOT EXISTS customers(
@@ -127,6 +127,35 @@ try{
 }catch(error){
     console.log("Appointment table not created", error.stack)
     return res.status(500).send("Appointment table creation failed.")
+
+}
+}
+
+exports.reviewTable = async(req,res)=>{
+    const createReviewTable = `
+        CREATE TABLE IF NOT EXISTS reviews(
+            review_id INT AUTO_INCREMENT PRIMARY KEY,
+            customer_id INT NOT NULL,
+            service_id INT NOT NULL,
+            rating TINYINT CHECK (rating BETWEEN 1 AND 5),
+            feedback TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY fk_reviews_customers(customer_id)
+            REFERENCES customers(customer_id)
+                ON UPDATE CASCADE
+                ON DELETE CASCADE,
+            FOREIGN KEY fk_reviews_services(service_id)
+            REFERENCES services(service_id)
+                ON UPDATE CASCADE
+                ON DELETE CASCADE
+        )
+    `
+try{
+    await db.query(createReviewTable)
+    res.status(200).send("Review table successfully created")
+}catch(error){
+    console.log("Review's table not created", error.stack)
+    return res.status(500).send("Review's table creation failed.")
 
 }
 }
