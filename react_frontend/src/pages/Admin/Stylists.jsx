@@ -3,34 +3,34 @@ import DashboardLayout from '../../components/Layout/DashboardLayout'
 import { AdminAuthContext } from '../../components/Context/AdminAuthContext'
 import Table from '../../components/ui/Table'
 
-const Services = () => {
-  const { getServices } = useContext(AdminAuthContext)
-  const [services, setServices] = useState([])
+const Stylists = () => {
+  const { getAllStylists } = useContext(AdminAuthContext)
+  const [stylists, setStylists] = useState([])
 
   useEffect(() => {
-    const loadServices = async () => {
+    const loadStylists = async () => {
       try {
-        const response = await getServices()
+        const response = await getAllStylists()
         console.log(response.data);
-        setServices(response.data)
+        setStylists(response.data)
       } catch (error) {
         console.log(error)
       }
     }
 
-    loadServices()
+    loadStylists()
   }, [])
   
 
   return (
     <DashboardLayout>
       <div>
-        <h2 className="text-3xl font-bold">Services</h2>
-        <p className="text-xl font-light">All the services we render</p>
+        <h2 className="text-3xl font-bold">Stylists</h2>
+        <p className="text-xl font-light">All the registered stylists</p>
       </div>
-      <Table data={services} />
+      <Table data={stylists} />
     </DashboardLayout>
   )
 }
 
-export default Services
+export default Stylists

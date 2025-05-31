@@ -1,5 +1,5 @@
 import { createContext, useState } from "react";
-import { addServices, adminLogin, adminRegister, adminUpdatePassword, services } from "../Request/api";
+import { addServices, adminLogin, adminRegister, adminUpdatePassword, allAppointments, allStylists, viewServices } from "../Request/api";
 
 export const AdminAuthContext = createContext()
 
@@ -71,7 +71,37 @@ export const AdminAuthContextProvider = ({ children }) => {
 
   const getServices = async () => {
     try {
-      const response = await services();
+      const response = await viewServices();
+  
+      if (response.status === 200) {
+        return { success: true, data: response.data };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message,
+      };
+    }
+  }
+
+  const getAppointments = async () => {
+    try {
+      const response = await allAppointments();
+  
+      if (response.status === 200) {
+        return { success: true, data: response.data };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message,
+      };
+    }
+  }
+
+  const getAllStylists = async () => {
+    try {
+      const response = await allStylists();
   
       if (response.status === 200) {
         return { success: true, data: response.data };
@@ -85,7 +115,7 @@ export const AdminAuthContextProvider = ({ children }) => {
   }
 
   return (
-    <AdminAuthContext.Provider value={{ admin, setAdmin, loginAdmin, registerAdmin, changeAdminPsw, serviceAdd, getServices }}>
+    <AdminAuthContext.Provider value={{ admin, setAdmin, loginAdmin, registerAdmin, changeAdminPsw, serviceAdd, getServices, getAppointments, getAllStylists }}>
       { children }
     </AdminAuthContext.Provider>
   )

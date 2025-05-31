@@ -3,7 +3,7 @@ import { Route, Routes } from 'react-router-dom'
 import { Home } from "./pages";
 import ReactModal from "react-modal";
 import { CDashboard, CLogin, CRegister } from './pages/Customers';
-import { ADashboard, AddService, AddStylist, ALogin, ARegister, Services } from './pages/Admin';
+import { ADashboard, AddService, AddStylist, ALogin, Appointments, ARegister, Services, Stylists } from './pages/Admin';
 import { AdminAuthContextProvider } from './components/Context/AdminAuthContext';
 import AdminProtected from './components/Context/AdminProtected';
 import { StylistAuthContextProvider } from './components/Context/StylistAuthContext';
@@ -29,6 +29,8 @@ function App() {
             <Route path='admin/dashboard' element={<AdminProtected><ADashboard /></AdminProtected>} />
             <Route path='admin/add-service' element={<AdminProtected><AddService /></AdminProtected>} />
             <Route path='admin/services' element={<AdminProtected><Services /></AdminProtected>} />
+            <Route path='admin/appointments' element={<AdminProtected><Appointments /></AdminProtected>} />
+            <Route path='admin/all-stylists' element={<AdminProtected><Stylists /></AdminProtected>} />
             <Route path='stylist/login' element={<SLogin />} />
             <Route path='stylist/register' element={<SRegister />} />
             <Route path='stylist/dashboard' element={<StylistProtected><SDashboard /></StylistProtected>} />

@@ -18,6 +18,7 @@ export const adminLogout = () => API.get('/auth/admin/logout')
 export const stylistRegister = data => API.post('/auth/stylist/register', data)
 export const stylistLogin = data => API.post('/auth/stylist/login', data)
 export const stylistLogout = () => API.get('/auth/stylist/logout')
+export const allStylists = () => API.get('/auth/stylist/view')
 
 // Customer
 export const customerRegister = data => API.post('/auth/customer/register', data)
@@ -27,8 +28,8 @@ export const customerProfile = () => API.get('/auth/customer/login/profile', dat
 
 // Appointment
 export const addAppointment = data => API.post('/auth/appointment/create', data)
-export const appointments = () => API.get('/auth/appointments/table')
+export const allAppointments = () => API.get('/auth/appointment/view')
 
 // Services
 export const addServices = data => API.post('/auth/service/create', data)
-export const services = () => API.get('/auth/services/table')
+export const viewServices = () => API.get('/auth/service/view')

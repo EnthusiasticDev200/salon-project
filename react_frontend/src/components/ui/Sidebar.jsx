@@ -21,6 +21,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
   } else if(location.pathname.includes('/admin/')) {
     navItems = [
       {icon: <i className='ri-home-3-line'></i>, title: 'Home', to: '/admin/dashboard'},
+      {icon: <i className='ri-group-line'></i>, title: 'Stylists', to: '/admin/all-stylists'},
       {icon: <i className='ri-scissors-2-line'></i>, title: 'Services', to: '/admin/services'},
       {icon: <i className='ri-file-list-2-line'></i>, title: 'Appointments', to: '/admin/appointments'},
       {icon: <i className='ri-add-circle-line'></i>, title: 'Add Services', to: '/admin/add-service'},
