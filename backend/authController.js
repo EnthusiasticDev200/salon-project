@@ -284,10 +284,12 @@ exports.registerCustomer = async (req, res)=>{
             return res.status(400).json({message:"Customer already exist"})
         };
         const hashedPassword = await bcrypt.hash(password, 10)
-        await db.query
-        (`INSERT INTO customers(first_name, last_name, username, email, phone_number, password_hash) VALUE(?,?,?,?,?,?)`,
-        [firstName, lastName, username, email, phoneNumber, hashedPassword])
-        
+        await db.query(`
+            INSERT INTO 
+                customers(first_name, last_name, username, email, phone_number, password_hash) 
+                VALUE(?,?,?,?,?,?)`,
+                [firstName, lastName, username, email, phoneNumber, hashedPassword]
+        )
         res.status(201).json({message:"Customer successfully created"});
     }catch(error){
         res.status(500).json({message:'Error registering customer', error})
@@ -361,7 +363,7 @@ exports.viewCustomers = async (req, res)=>{
         const [getCustomer] = await db.query
         ("SELECT customer_id, first_name, last_name, username, email, phone_number FROM customers")
         console.log("services", getCustomer)
-        return res.status(200).send(getCustomer)
+        return res.status(200).json(getCustomer)
     }catch(err){
         console.error("Gettng customers failed", err)
         res.status(500).json({message: 'Error fetching customers', err:err.stack})
@@ -413,10 +415,12 @@ exports.registerStylist = async (req, res)=>{
             return res.status(400).json({message:"STylist alrady exist"})
     };
     const hashedPassword = await bcrypt.hash(password, 10)
-    await db.query
-    (`INSERT INTO stylists(first_name, last_name, username, email, phone_number, password_hash, specialization) VALUE(?,?,?,?,?,?,?)`,
-    [firstName, lastName, username, email, phoneNumber, hashedPassword, specialization])
-        
+    await db.query(`
+        INSERT INTO 
+            stylists(first_name, last_name, username, email, phone_number, password_hash, specialization) 
+            VALUE(?,?,?,?,?,?,?)`,
+            [firstName, lastName, username, email, phoneNumber, hashedPassword, specialization]
+    )    
     res.status(201).json({message:"Stylist successfully created"});
     }catch(error){
         res.status(500).json({message:'Error registering stylist', error})
@@ -503,28 +507,54 @@ exports.createAppointment = async (req, res) =>{
             return res.status(401).json({message:"Invalid stylist username"})
         }
         
-        const [queryService] = await db.query("SELECT * FROM services WHERE hair_style = ?", [hairStyle])
+        const [queryService] = await db.query(`
+            SELECT * 
+                FROM services 
+                WHERE hair_style = ?`, 
+                [hairStyle]
+        )
         if(queryService.length === 0){
             return res.status(401).json({message:"We don't offer this service, pase check the service menu."})
         }
         //check existing Ap for data integrity
         const apCheckValue = [queryCustomer[0].customer_id]
-        const [checkAppointment] = await db.query
-        ("SELECT * FROM appointments WHERE customer_id =? AND appointment_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)",apCheckValue)
+        const [checkAppointment] = await db.query(`
+            SELECT * 
+                FROM 
+                appointments 
+                WHERE customer_id =? 
+                AND appointment_date BETWEEN CURDATE() 
+                AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)`,
+            apCheckValue
+        )
         if(checkAppointment.length > 0){
             console.log("appointmentDetails", checkAppointment)
             return res.status(400).json({message:"Appointment already booked for the week"});
         }
-        const [checkStylistSpec] = await db.query
-        ("SELECT username, specialization FROM stylists WHERE username =? AND FIND_IN_SET (?, REPLACE(specialization, ' ','')) > 0", [stylistUsername, hairStyle])
+        const [checkStylistSpec] = await db.query(`
+            SELECT 
+                username, specialization 
+                FROM stylists 
+                WHERE 
+                username =? AND FIND_IN_SET (?, REPLACE(specialization, ' ','')) > 0`, 
+                [stylistUsername, hairStyle]
+        )
         if(checkStylistSpec.length === 0){
             console.log("stylistSpec: ", checkStylistSpec)
             return res.status(401).json({message:"Not stylist's area of specialty"})
         }
         const apValue = [queryCustomer[0].customer_id,queryStylist[0].stylist_id, queryService[0].service_id, appointmentDate, appointmentTime, 'pending']
-        await db.query
-        ("INSERT INTO appointments(customer_id, stylist_id, service_id, appointment_date, appointment_time,status) VALUES (?, ?, ?, ?, ?, ?)", apValue)
-        const appointmentData = {
+        await db.query(`
+            INSERT INTO appointments
+            (
+                customer_id, stylist_id, service_id, 
+                appointment_date, appointment_time,status
+            ) 
+            VALUES (?, ?, ?, ?, ?, ?)`,
+            apValue
+        )    
+        const appointmentData = 
+        {
             customerName : queryCustomer[0].firstName + ' ' + queryCustomer[0].lastName,
             date : appointmentDate,
             time : appointmentTime,
@@ -546,10 +576,22 @@ exports.createAppointment = async (req, res) =>{
 
 exports.viewAppointments = async (req, res)=>{
     try{
-        const getAppointments = await db.query
-        ("SELECT appointment_id, c.first_name AS customer_first_name, c.last_name AS customer_last_name, s.username AS stylist_username, serv.hair_style AS hair_style, appointment_date, appointment_time,status FROM appointments JOIN customers c USING(customer_id)JOIN stylists s USING(stylist_id) JOIN services serv USING(service_id)")
+        const [getAppointments] = await db.query(`
+            SELECT 
+                appointment_id, 
+                c.first_name AS customer_first_name, c.last_name AS customer_last_name, 
+                s.username AS stylist_username, 
+                serv.hair_style AS hair_style, 
+                DATE_FORMAT(appointment_date, '%Y-%m-%d') AS appointment_date,
+                TIME_FORMAT(appointment_time, '%H:%i') AS appointment_time,
+                status 
+                FROM appointments 
+                JOIN customers c USING(customer_id)
+                JOIN stylists s USING(stylist_id) 
+                JOIN services serv USING(service_id)
+        `)
         console.log("appointment", getAppointments)
-        return res.status(200).send(getAppointments)
+        return res.status(200).json(getAppointments)
     }catch(err){
         console.error("Getting appointments failed", err)
         return res.status(500).json({message:"Error fetching appointments", err:err.stack})
