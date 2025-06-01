@@ -50,7 +50,7 @@ router.get('/customer/view', authenticateJWT,requireSuperuser, viewCustomers)
 
 //service's endpoint
 router.post('/service/create', authenticateJWT, requireSuperuser,createServices) // 
-router.get('/service/view', authenticateJWT,viewServices)
+router.get('/service/view',viewServices)
 
 // stylist endpoint 
 router.post('/stylist/register', validateStylist,registerStylist)
