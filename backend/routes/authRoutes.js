@@ -51,13 +51,13 @@ router.get('/customer/view', authenticateJWT,requireSuperuser, viewCustomers)
 
 //service's endpoint
 router.post('/service/create', authenticateJWT, requireSuperuser,createServices) // 
-router.get('/service/view', authenticateJWT, requireSuperuser,viewServices)
+router.get('/service/view',viewServices)
 
 // stylist endpoint 
 router.post('/stylist/register', validateStylist,registerStylist)
 router.post('/stylist/login',loginStylist)
 router.get('/stylist/logout', authenticateJWT,logoutStylist)
-router.get('/stylist/view', authenticateJWT, requireSuperuser, viewStylists)
+router.get('/stylist/view', authenticateJWT, viewStylists)
 
 //appointment endpoint
 router.post('/appointment/create', validateAppointment,authenticateJWT, createAppointment)
