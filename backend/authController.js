@@ -369,7 +369,17 @@ exports.getCustomerProfile = async (req, res)=>{
         if(checkCustomer.length === 0){
             res.status(403).json({message:"No record found"})
         }
-        res.status(200).json({message:`You're authenticated. Welcome ${req.username}`, userId: req.userId})
+        //res.status(200).json({message:`You're authenticated. Welcome ${req.username}, userId: ${req.userId}`})
+        const [checkMyappointment] = await db.query(`
+            SELECT * 
+                FROM appointments 
+                WHERE customer_id = ? `,
+            [userId])
+        if(checkMyappointment.length === 0){
+            res.status(401).json({message: "You have not booked any appointment"})
+        }
+        console.log("my appointment", [checkMyappointment])
+        res.status(200).send([checkMyappointment])
     }catch(err){
         console.error("Error fetching customer profile", err)
         res.status(500).json({message: 'Get profile error', err:err.stack})
