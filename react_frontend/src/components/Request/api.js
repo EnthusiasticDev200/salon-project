@@ -23,8 +23,9 @@ export const allStylists = () => API.get('/auth/stylist/view')
 // Customer
 export const customerRegister = data => API.post('/auth/customer/register', data)
 export const customerLogin = data => API.post('/auth/customer/login', data)
-export const customerLogout = () => API.get('/auth/customer/profile/logout', data)
-export const customerProfile = () => API.get('/auth/customer/login/profile', data)
+export const customerLogout = () => API.get('/auth/customer/profile/logout')
+export const customerProfile = () => API.get('/auth/customer/login/profile')
+export const viewCustomers = () => API.get('/auth/customer/view')
 
 // Appointment
 export const addAppointment = data => API.post('/auth/appointment/create', data)

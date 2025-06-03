@@ -16,7 +16,7 @@ const Pagination = ({ currentPage, setCurrentPage, jumpPage, setJumpPage, totalP
 
   return (
     <div className='mt-4 flex md:flex-row flex-col items-center gap-6 w-fit mx-auto'>
-      <div className="flex items-center gap-2">
+      <div className="hidden md:flex items-center gap-2">
         <input
           type="number"
           className="p-3 border rounded-xl w-32 text-center focus:border focus:outline-accent bg-[#333]"
@@ -51,7 +51,7 @@ const Pagination = ({ currentPage, setCurrentPage, jumpPage, setJumpPage, totalP
         </li>
       </ul>
 
-      <div className="flex items-center gap-2">
+      <div className="hidden md:flex items-center gap-2">
         <span>Rows per page:</span>
         <select 
           className="p-3 rounded-xl focus:border focus:outline-accent bg-[#333]"

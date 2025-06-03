@@ -12,7 +12,7 @@ const Appointments = () => {
       try {
         const response = await getAppointments()
         console.log(response.data);
-        setAppointments(response.data[1])
+        setAppointments(response.data)
       } catch (error) {
         console.log(error)
       }
@@ -28,7 +28,7 @@ const Appointments = () => {
         <h2 className="text-3xl font-bold">Appointments</h2>
         <p className="text-xl font-light">All the appointments that have been made</p>
       </div>
-      {/* <Table data={appointments} /> */}
+      <Table data={appointments} />
     </DashboardLayout>
   )
 }

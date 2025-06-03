@@ -1,5 +1,5 @@
 import { createContext, useState } from "react";
-import { stylistLogin, stylistRegister } from "../Request/api";
+import { stylistLogin, stylistLogout, stylistRegister } from "../Request/api";
 
 export const StylistAuthContext = createContext()
 
@@ -27,6 +27,27 @@ export const StylistAuthContextProvider = ({ children }) => {
     }
   }
 
+  const logoutStylist = async () => {
+    try {
+      const response = await stylistLogout()
+
+      if(response.status == 200) {
+        setStylist(null)
+        sessionStorage.removeItem('stylistInfo')
+
+        return { 
+          success: true, 
+          data: response.data 
+        }
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Logout failed. Please try again.",
+      };
+    }
+  }
+
   const registerStylist = async (data) => {
     try {
       const response = await stylistRegister(data)
@@ -46,7 +67,7 @@ export const StylistAuthContextProvider = ({ children }) => {
   }
 
   return (
-    <StylistAuthContext.Provider value={{ stylist, setStylist, loginStylist, registerStylist }}>
+    <StylistAuthContext.Provider value={{ stylist, setStylist, loginStylist, logoutStylist, registerStylist }}>
       { children }
     </StylistAuthContext.Provider>
   )

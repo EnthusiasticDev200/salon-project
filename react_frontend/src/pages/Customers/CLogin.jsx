@@ -1,10 +1,15 @@
-import { useState } from 'react'
+import { useContext, useState } from 'react'
 import CustomerFormLayout from '../../components/Layout/CustomerFormLayout'
 import Input from '../../components/ui/Input'
 import axios from 'axios'
 import BG from "./../../assets/bg1.jpg";
+import { UserAuthContext } from '../../components/Context/UserAuthContext';
+import { Link, useNavigate } from 'react-router-dom';
 
 const CLogin = () => {
+  const { loginUser } = useContext(UserAuthContext)
+  const navigate = useNavigate()
+
   const [formValues, setFormValues] = useState({
     email: '',
     password: '',
@@ -18,11 +23,11 @@ const CLogin = () => {
     e.preventDefault()
 
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_ADDRESS}/auth/customer/login`, formValues, {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-      })
+      const response = await loginUser(formValues)
+
+      if(response.success) {
+        navigate('/customer/dashboard')
+      }
       console.log(response.data);  
     } catch (error) {
       console.error('Error registering customer:', error.response?.data || error.message);
@@ -55,6 +60,9 @@ const CLogin = () => {
           required
         />
         <button className='py-2 px-4 bg-accent hover:bg-accentDark transition-all text-black rounded'>Login</button>
+        <p className="my-3">
+          Don't have an account? Click <Link to={'/customer/register'} className='text-accent font-bold'>Here</Link> to register
+        </p>
       </form>
     </CustomerFormLayout>
   )

@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import Sidebar from '../ui/Sidebar'
 
 const DashboardLayout = ({ children }) => {
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
   return (
     <div className='h-[100vh] flex'>
       <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />

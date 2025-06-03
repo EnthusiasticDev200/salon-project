@@ -50,9 +50,9 @@ const Contact = () => {
         </div>
       </div>
       <div className='border-t mt-6 flex flex-col md:flex-row justify-between items-center py-6'>
-        <div className="flex items-center gap-4">
+        <div className="flex md:flex-row flex-col items-center gap-4">
           <img src={Logo} className='w-[50px]' alt="" />
-          <p>KhleanCutz Barbershop. {new Date().getFullYear()} All Rights Reserved</p>
+          <p className='text-center'>KhleanCutz Barbershop. {new Date().getFullYear()} All Rights Reserved</p>
         </div>
         <p className=' mt-4 md:mt-0'>Designed by <a href="https://onuohajephthah.netlify.app" className='text-accent font-semibold'>Onuoha Jephthah</a></p>
       </div>

@@ -1,6 +1,8 @@
 import React from "react";
 const Input = ({
   type = "text",
+  element = "input",
+  options = [],
   id,
   name,
   label,
@@ -34,22 +36,43 @@ const Input = ({
         </label>
       )}
       <div className="relative">
-        <input
-          type={type}
-          id={id}
-          name={name}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          required={required}
-          className={`w-full no-native-icon border ${
-            error
-              ? "border-red-500 focus:ring-red-500"
-              : "border-gray-300 focus:ring-blue-500"
-          } rounded-lg px-4 py-2 ${
-            isDateOrTime ? "pr-12" : ""
-          } text-gray-700 focus:outline-none focus:ring-2`}
-        />
+        {
+          element == 'input' ?
+          <input
+            type={type}
+            id={id}
+            name={name}
+            value={value}
+            onChange={onChange}
+            placeholder={placeholder}
+            required={required}
+            className={`w-full no-native-icon border ${
+              error
+                ? "border-red-500 focus:ring-red-500"
+                : "border-gray-300 focus:ring-blue-500"
+            } rounded-lg px-4 py-2 ${
+              isDateOrTime ? "pr-12" : ""
+            } text-gray-700 focus:outline-none focus:ring-2`}
+          /> :
+          element == 'select' ? 
+          <select 
+            id={id}
+            name={name}
+            value={value}
+            onChange={onChange}
+            required={required}
+            className={`w-full no-native-icon border ${
+              error
+                ? "border-red-500 focus:ring-red-500"
+                : "border-gray-300 focus:ring-blue-500"
+            } rounded-lg px-4 py-2 text-gray-700 focus:outline-none focus:ring-2`}
+          >
+            <option value={''} disabled>Select {placeholder}</option>
+            {
+              options.map((option, index) => <option key={index} value={option}>{option}</option>)
+            }
+          </select> : null
+        }
         {isDateOrTime && (
           <div
             className="absolute bottom-[0.85rem] right-0 flex items-center pr-3 text-gray-500 cursor-pointer"

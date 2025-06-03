@@ -1,10 +1,14 @@
-import { useState } from 'react'
+import { useContext, useState } from 'react'
 import CustomerFormLayout from '../../components/Layout/CustomerFormLayout'
 import Input from '../../components/ui/Input'
 import axios from 'axios'
 import BG from "./../../assets/bg2.jpg";
+import { UserAuthContext } from '../../components/Context/UserAuthContext';
+import { Link } from 'react-router-dom';
 
 const CRegister = () => {
+  const { registerUser } = useContext(UserAuthContext)
+
   const [formValues, setFormValues] = useState({
     firstName: '',
     lastName: '',
@@ -22,12 +26,8 @@ const CRegister = () => {
     e.preventDefault()
 
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_ADDRESS}/auth/customer/register`, formValues, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-      console.log(response.data);  
+      const response = await registerUser(formValues)
+      console.log(response.data);
       
       setFormValues({ firstName: '', lastName: '', username: '', email: '', phoneNumber: '', password: '' })
     } catch (error) {
@@ -97,6 +97,9 @@ const CRegister = () => {
           required
         />
         <button className='py-2 px-4 bg-accent hover:bg-accentDark transition-all text-black rounded'>Submit</button>
+        <p className="my-3">
+          Already have an account? Click <Link to={'/customer/login'} className='text-accent font-bold'>Here</Link> to login
+        </p>
       </form>
     </CustomerFormLayout>
   )
