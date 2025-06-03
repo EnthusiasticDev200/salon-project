@@ -359,7 +359,7 @@ exports.logInCustomer =  async (req, res)=>{
         res.status(500).json({message: 'Log in error', err:err.stack})
     }
 }
-exports.getCustomerProfile = async (req, res)=>{
+exports.CustomerProfile = async (req, res)=>{
     const userId = req.userId 
     if(!req.userId){
         return res.status(403).json({message:"Access denied. Kindly register"})
@@ -498,6 +498,32 @@ exports.loginStylist = async (req, res)=>{
         console.error('Error log in stylist', error)
         return res.status(500).json({message:"Error loggig in stylist", error:error.stack})
 
+    }
+}
+
+exports.stylistProfile = async (req, res)=>{
+    try{
+        const stylistId = req.stylistId
+        const [checkStylist] = await db.query(`
+            SELECT * 
+                FROM stylists 
+                WHERE stylist_id = ?`,
+            [stylistId])
+        if (checkStylist.lenght === 0){
+            res.status(401).json({message: 'Not a stylist'})
+        }
+        const [myAppointments] = await db.query(`
+            SELECT *
+                FROM appointments
+                WHERE stylist_id = ?`,
+            [stylistId])
+        if(myAppointments.length === 0){
+            res.status(401).json({message:"No appointments record found"})
+        }
+        res.status(200).send([myAppointments])
+    }catch(error){
+        console.error('Error getting stylist profile', error)
+        return res.status(500).json({message:"Stylist profile error", error:error.stack})
     }
 }
 exports.logoutStylist = async (req, res)=>{
