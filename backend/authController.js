@@ -371,8 +371,16 @@ exports.CustomerProfile = async (req, res)=>{
         }
         //res.status(200).json({message:`You're authenticated. Welcome ${req.username}, userId: ${req.userId}`})
         const [checkMyappointment] = await db.query(`
-            SELECT * 
+            SELECT 
+                appointment_id, 
+                s.username AS stylist_username, 
+                serv.hair_style AS hair_style, 
+                DATE_FORMAT(appointment_date, '%Y-%m-%d') AS appointment_date,
+                TIME_FORMAT(appointment_time, '%H:%i') AS appointment_time,
+                status 
                 FROM appointments 
+                JOIN stylists s USING(stylist_id) 
+                JOIN services serv USING(service_id)
                 WHERE customer_id = ? `,
             [userId])
         if(checkMyappointment.length === 0){
@@ -505,16 +513,24 @@ exports.stylistProfile = async (req, res)=>{
     try{
         const stylistId = req.stylistId
         const [checkStylist] = await db.query(`
-            SELECT * 
-                FROM stylists 
+            SELECT *
+                FROM stylists
                 WHERE stylist_id = ?`,
             [stylistId])
         if (checkStylist.lenght === 0){
             res.status(401).json({message: 'Not a stylist'})
         }
         const [myAppointments] = await db.query(`
-            SELECT *
-                FROM appointments
+            SELECT 
+                appointment_id, 
+                c.first_name AS customer_first_name, c.last_name AS customer_last_name, 
+                serv.hair_style AS hair_style, 
+                DATE_FORMAT(appointment_date, '%Y-%m-%d') AS appointment_date,
+                TIME_FORMAT(appointment_time, '%H:%i') AS appointment_time,
+                status 
+                FROM appointments 
+                JOIN customers c USING(customer_id)
+                JOIN services serv USING(service_id) 
                 WHERE stylist_id = ?`,
             [stylistId])
         if(myAppointments.length === 0){
