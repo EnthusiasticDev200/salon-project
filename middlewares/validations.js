@@ -47,11 +47,18 @@ const validateAdmin =
         .notEmpty()
         .matches(/^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d]+$/)
         .isLength({min:6})
-    ]
+]
+
+const validateReview = 
+[
+    check("hairStyle", "Hair style is required").notEmpty().toLowerCase(),
+    check("rating", "Rating must be greater than 0 and less than 6").notEmpty().isInt({min: 1, max:5}),
+    check("feedback", "Feedback is required").notEmpty().toLowerCase()
+]
 
 module.exports = 
 {
     validateAppointment, validateStylist, validateCustomer,
-    validateAdmin
+    validateAdmin, validateReview
 
 }
