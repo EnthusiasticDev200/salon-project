@@ -1,9 +1,26 @@
 import React, { useState } from 'react'
 import DashboardLayout from '../../components/Layout/DashboardLayout'
 import Table from '../../components/ui/Table'
+import { UserAuthContext } from '../../components/Context/UserAuthContext'
+import { useContext } from 'react'
+import { useEffect } from 'react'
 
 const CAppointments = () => {
   const [appointments, setAppointments] = useState([])
+  const { userProfile } = useContext(UserAuthContext)
+  
+    useEffect(() => {
+      const loadProfile = async () => {
+        try {
+          const response = await userProfile()
+          setAppointments(response.data[0])
+        } catch (error) {
+          console.log(error);
+        }
+      }
+  
+      loadProfile()
+    }, [])
 
   return (
     <DashboardLayout>

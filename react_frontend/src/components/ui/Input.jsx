@@ -13,6 +13,7 @@ const Input = ({
   error = "",
 }) => {
   const isDateOrTime = type === "date" || type === "time";
+  const isDate = type === "date"
 
   const getIcon = () => {
     if (type === "date") return <i className="ri-calendar-line w-5 h-5"></i>;

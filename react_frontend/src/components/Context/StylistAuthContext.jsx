@@ -1,5 +1,5 @@
 import { createContext, useState } from "react";
-import { stylistLogin, stylistLogout, stylistRegister } from "../Request/api";
+import { stylistLogin, stylistLogout, stylistProfile, stylistRegister } from "../Request/api";
 
 export const StylistAuthContext = createContext()
 
@@ -66,8 +66,26 @@ export const StylistAuthContextProvider = ({ children }) => {
     }
   }
 
+  const getStylistProfile = async () => {
+    try {
+      const response = await stylistProfile()
+
+      if(response.status == 200 | 201) {
+        return { 
+          success: true, 
+          data: response.data 
+        }
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Profile request failed. Please try again.",
+      };
+    }
+  }
+
   return (
-    <StylistAuthContext.Provider value={{ stylist, setStylist, loginStylist, logoutStylist, registerStylist }}>
+    <StylistAuthContext.Provider value={{ stylist, setStylist, loginStylist, logoutStylist, registerStylist, getStylistProfile }}>
       { children }
     </StylistAuthContext.Provider>
   )

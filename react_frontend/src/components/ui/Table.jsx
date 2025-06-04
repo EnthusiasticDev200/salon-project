@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import Pagination from './Pagination'
+import Button from './Button'
 
-const Table = ({ data, excludedHeaders = [] }) => {
+const Table = ({ data, excludedHeaders = [], button = false }) => {
   const [currentPage, setCurrentPage] = useState(1)
   const [jumpPage, setJumpPage] = useState('')
   const [rowsPerPage, setRowsPerPage] = useState(10)
@@ -30,6 +31,9 @@ const Table = ({ data, excludedHeaders = [] }) => {
               {
                 headers.map((header, index) => <th className='p-2 text-left capitalize' key={index}>{ header }</th>)
               }
+              {
+                button && <th className='p-2 text-left capitalize'>Update Status</th>
+              }
             </tr>
           </thead>
           <tbody>
@@ -40,6 +44,9 @@ const Table = ({ data, excludedHeaders = [] }) => {
                     headers.map(header => (
                       <td className='p-2' key={header}>{row[header]}</td>
                     ))
+                  }
+                  {
+                    button && <Button className={'my-1'}>Update</Button>
                   }
                 </tr>
               )

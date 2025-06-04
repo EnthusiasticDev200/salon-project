@@ -19,12 +19,13 @@ export const stylistRegister = data => API.post('/auth/stylist/register', data)
 export const stylistLogin = data => API.post('/auth/stylist/login', data)
 export const stylistLogout = () => API.get('/auth/stylist/logout')
 export const allStylists = () => API.get('/auth/stylist/view')
+export const stylistProfile = () => API.get('/auth/stylist/profile')
 
 // Customer
 export const customerRegister = data => API.post('/auth/customer/register', data)
 export const customerLogin = data => API.post('/auth/customer/login', data)
 export const customerLogout = () => API.get('/auth/customer/profile/logout')
-export const customerProfile = () => API.get('/auth/customer/login/profile')
+export const customerProfile = () => API.get('/auth/customer/profile')
 export const viewCustomers = () => API.get('/auth/customer/view')
 
 // Appointment

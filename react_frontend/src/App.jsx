@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { Home } from "./pages";
 import ReactModal from "react-modal";
-import { AddAppointment, CAppointments, CDashboard, CLogin, CRegister, Profile } from './pages/Customers';
+import { AddAppointment, CAppointments, CDashboard, CLogin, CRegister } from './pages/Customers';
 import { ADashboard, AddService, AddStylist, ALogin, Appointments, ARegister, Customers, Services, Stylists } from './pages/Admin';
 import { AdminAuthContextProvider } from './components/Context/AdminAuthContext';
 import AdminProtected from './components/Context/AdminProtected';
@@ -31,7 +31,6 @@ function App() {
               <Route path='customer/dashboard' element={<UserProtected><CDashboard /></UserProtected>} />
               <Route path='customer/add-appointment' element={<UserProtected><AddAppointment /></UserProtected>} />
               <Route path='customer/appointments' element={<UserProtected><CAppointments /></UserProtected>} />
-              <Route path='customer/profile' element={<UserProtected><Profile /></UserProtected>} />
 
               {/* Admin Routes */}
               <Route path='admin/login' element={<ALogin />} />

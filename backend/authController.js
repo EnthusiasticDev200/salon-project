@@ -509,7 +509,7 @@ exports.stylistProfile = async (req, res)=>{
                 FROM stylists 
                 WHERE stylist_id = ?`,
             [stylistId])
-        if (checkStylist.lenght === 0){
+        if (checkStylist.length === 0){
             res.status(401).json({message: 'Not a stylist'})
         }
         const [myAppointments] = await db.query(`

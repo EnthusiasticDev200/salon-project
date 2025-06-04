@@ -34,7 +34,6 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
       {icon: <i className='ri-home-3-line'></i>, title: 'Home', to: '/customer/dashboard'},
       {icon: <i className='ri-table-view'></i>, title: 'Appointments', to: '/customer/appointments'},
       {icon: <i className='ri-add-circle-line'></i>, title: 'Add Appointment', to: '/customer/add-appointment'},
-      {icon: <i className='ri-profile-line'></i>, title: 'Profile', to: '/customer/profile'},
     ]
   }
 
