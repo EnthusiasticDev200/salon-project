@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review</title>
+    <style>
+        label,input{
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h2>Welcome to KhleanCutz</h2>
+    <p>Kindly leave a review</p>
+    <form id="createReiew">
+        <label for="hairStyle">Hair Style</label>
+        <input type="text" id="hairStyle" name="hairStyle" required>
+
+        <label for="rating">Rating/label>
+        <input type="number" id="rating" name="rating" required>
+
+        <label for="feedback">Hair Style</label>
+        <input type="text" id="feedback" name="feedback" required>
+
+        <!-- <label for="status">Status</label>
+        <input type="text" id="status" name="status" required> -->
+
+        <button type="submit">Submit</button>
+    </form>
+    
+    <script>
+        document.getElementById("createReiew").addEventListener('submit', async (e)=>{
+            e.preventDefault()
+        const hairStyle = document.getElementById("hairStyle").value
+        const rating = document.getElementById("rating").value
+        const feedback = document.getElementById("feedback").value
+        //const status = document.getElementById("status").value
+        
+        try{
+            const body = {hairStyle, rating, feedback}
+            const response = await fetch('/auth/review/create', {
+                method : "POST",
+                headers : {
+                    "Content-Type" : "application/json"
+                },
+                body : JSON.stringify(body)
+            })
+            const data = await response.json()
+            if(response.ok){
+                console.log("Server response", data)
+                alert(`${data.message}`) 
+            }else{
+                console.log(`Error encountered: ${data.message}`)
+                alert(`Error: ${data.message}`) 
+            }
+        }catch (err) {
+            console.log(`Error creating a review: ${err.message}`);
+            alert(`Review not created: ${err.message}`);
+        }
+
+
+
+
+        })
+    </script>
+</body>
+</html>
