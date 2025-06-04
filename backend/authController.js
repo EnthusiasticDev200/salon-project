@@ -663,3 +663,53 @@ exports.viewAppointments = async (req, res)=>{
     }
     
 }
+
+//review logic
+exports.createReview = async(req,res)=>{
+    try{
+        const checkReviewInput = await checkValidationResult(req)
+        if(checkReviewInput){
+            return res.status(401).json({message:"Please fix error", errors:checkAppointmentInput })
+        }
+        const {hairStyle, rating, feedback} = req.body
+        const userId = req.userId
+        const [checkCustomer] = await db.query(`
+            SELECT customer_id 
+                FROM customers 
+                WHERE customer_id = ?`,
+            [userId])
+        if(checkCustomer.length === 0){
+            res.status(401).json({message: `Not a customer`})
+        }
+        
+        const [queryService] = await db.query(`
+            SELECT service_id 
+                FROM services
+                WHERE hair_style = ?`,
+            [hairStyle])
+        if(queryService.length === 0){
+            res.status(401).json({message: 'Not a service you were offered'})
+        }
+        console.log("customer id", checkCustomer[0].customer_id)
+        console.log("service id: ", queryService[0].service_id)
+        const [checkReview] = await db.query(`
+            SELECT * 
+                FROM reviews
+                WHERE customer_id = ? 
+                AND service_id = ?`,
+            [checkCustomer[0].customer_id, queryService[0].service_id])
+        if(checkReview.length > 0){
+           return res.status(401).json({message:'Review already created'})
+        }
+        await db.query(`
+            INSERT INTO reviews
+                (customer_id, service_id, rating, feedback)
+                VALUE(?,?,?,?)`,
+            [checkCustomer[0].customer_id, queryService[0].service_id, rating, feedback])
+            res.status(201).json({message: 'Review successfully created'})
+    }catch(error){
+        console.log("Error creating review", error)
+        res.status(500).json({message:'Creating review failed', error:error.stack})
+
+    }
+}

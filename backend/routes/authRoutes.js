@@ -7,6 +7,7 @@ const
     validateAppointment, validateStylist,
     validateCustomer,
     validateAdmin,
+    validateReview
 
 } = require("../../middlewares/validations")
 
@@ -18,7 +19,7 @@ const
     stylistTable, registerStylist,loginStylist, logoutStylist,viewStylists,
     serviceTable,createServices,viewServices,
     appointmentTable, createAppointment, viewAppointments,
-    reviewTable,
+    reviewTable, createReview,
     stylistProfile
     
 } = require('../authController')
@@ -63,5 +64,8 @@ router.get('/stylist/view', authenticateJWT, viewStylists)
 //appointment endpoint
 router.post('/appointment/create', validateAppointment,authenticateJWT, createAppointment)
 router.get('/appointment/view', authenticateJWT, requireSuperuser,viewAppointments)
+
+//review endpoint
+router.post('/review/create', validateReview, authenticateJWT, createReview)
 
 module.exports = router
