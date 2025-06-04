@@ -14,11 +14,12 @@ const
 const
 {
     adminTable,registerAdmin, logInAdmin,logoutAdmin,changeAdminPassword,
-    customerTable, registerCustomer, logInCustomer, getCustomerProfile,logoutCustomer,viewCustomers,
+    customerTable, registerCustomer, logInCustomer, CustomerProfile,logoutCustomer,viewCustomers,
     stylistTable, registerStylist,loginStylist, logoutStylist,viewStylists,
     serviceTable,createServices,viewServices,
     appointmentTable, createAppointment, viewAppointments,
-    reviewTable
+    reviewTable,
+    stylistProfile
     
 } = require('../authController')
 
@@ -45,7 +46,7 @@ router.put('/admin/updatepassword',changeAdminPassword)
 router.post('/customer/register', validateCustomer,registerCustomer)
 router.post('/customer/login',logInCustomer)
 //customer's protected routes
-router.get("/customer/login/profile", authenticateJWT, getCustomerProfile) 
+router.get("/customer/profile", authenticateJWT, CustomerProfile) 
 router.get('/customer/profile/logout', authenticateJWT,logoutCustomer)
 router.get('/customer/view', authenticateJWT,requireSuperuser, viewCustomers)
 
@@ -56,6 +57,7 @@ router.get('/service/view',viewServices)
 // stylist endpoint 
 router.post('/stylist/register', validateStylist,registerStylist)
 router.post('/stylist/login',loginStylist)
+router.get("/stylist/profile", authenticateJWT, stylistProfile)
 router.get('/stylist/logout', authenticateJWT,logoutStylist)
 router.get('/stylist/view', authenticateJWT, viewStylists)
 
