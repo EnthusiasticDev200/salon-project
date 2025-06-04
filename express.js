@@ -84,6 +84,11 @@ app.get('/salon/createap', (req, res)=>{
     res.sendFile(path.join(__dirname, '/frontend/appointments/createAp.html'))
 })
 
+//route for creating review html
+app.get('/salon/createreview', (req, res)=>{
+    res.sendFile(path.join(__dirname, '/frontend/reviews/createReviews.html'))
+})
+
 
 
 // // io.on('connection', (socket) => {
