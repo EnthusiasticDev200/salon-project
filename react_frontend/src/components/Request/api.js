@@ -35,3 +35,6 @@ export const allAppointments = () => API.get('/auth/appointment/view')
 // Services
 export const addServices = data => API.post('/auth/service/create', data)
 export const viewServices = () => API.get('/auth/service/view')
+
+// Reviews
+export const addReviews = data => API.post('/auth/review/create', data)

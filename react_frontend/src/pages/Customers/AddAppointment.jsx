@@ -39,10 +39,10 @@ const AddAppointment = () => {
   useEffect(() => {
     if (alert.message) {
       const timeout = setTimeout(() => {
-        setAlert(prev => ({ ...prev, message: '' })); // Clear the message
+        setAlert(prev => ({ ...prev, message: '' }));
       }, 5000);
 
-      return () => clearTimeout(timeout); // Clean up
+      return () => clearTimeout(timeout);
     }
   }, [alert.message]);
   

@@ -18,7 +18,7 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
   if(location.pathname.includes('/stylist/')) {
     navItems = [
       {icon: <i className='ri-home-3-line'></i>, title: 'Home', to: '/stylist/dashboard'},
-      {icon: <i className='ri-table-view'></i>, title: 'Appointments', to: '/stylist/appointments'},
+      {icon: <i className='ri-calendar-schedule-line'></i>, title: 'Appointments', to: '/stylist/appointments'},
     ]
   } else if(location.pathname.includes('/admin/')) {
     navItems = [
@@ -26,14 +26,15 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
       {icon: <i className='ri-group-line'></i>, title: 'Stylists', to: '/admin/all-stylists'},
       {icon: <i className='ri-user-community-line'></i>, title: 'Customers', to: '/admin/all-customers'},
       {icon: <i className='ri-scissors-2-line'></i>, title: 'Services', to: '/admin/services'},
-      {icon: <i className='ri-table-view'></i>, title: 'Appointments', to: '/admin/all-appointments'},
+      {icon: <i className='ri-calendar-schedule-line'></i>, title: 'Appointments', to: '/admin/all-appointments'},
       {icon: <i className='ri-add-circle-line'></i>, title: 'Add Services', to: '/admin/add-service'},
     ]
   } else {
     navItems = [
       {icon: <i className='ri-home-3-line'></i>, title: 'Home', to: '/customer/dashboard'},
-      {icon: <i className='ri-table-view'></i>, title: 'Appointments', to: '/customer/appointments'},
-      {icon: <i className='ri-add-circle-line'></i>, title: 'Add Appointment', to: '/customer/add-appointment'},
+      {icon: <i className='ri-calendar-schedule-line'></i>, title: 'Appointments', to: '/customer/appointments'},
+      {icon: <i className='ri-sticky-note-add-line'></i>, title: 'Add Appointment', to: '/customer/add-appointment'},
+      {icon: <i className='ri-survey-line'></i>, title: 'Add Review', to: '/customer/add-review'},
     ]
   }
 

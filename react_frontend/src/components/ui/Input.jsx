@@ -26,6 +26,8 @@ const Input = ({
     if (el?.showPicker) el.showPicker();
   };
 
+  const style = `w-full no-native-icon border ${ error ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500" } rounded-lg px-4 py-2 ${ isDateOrTime ? "pr-12" : "" } text-gray-700 focus:outline-none focus:ring-2`
+
   return (
     <div className="w-full my-4">
       {label && (
@@ -47,13 +49,7 @@ const Input = ({
             onChange={onChange}
             placeholder={placeholder}
             required={required}
-            className={`w-full no-native-icon border ${
-              error
-                ? "border-red-500 focus:ring-red-500"
-                : "border-gray-300 focus:ring-blue-500"
-            } rounded-lg px-4 py-2 ${
-              isDateOrTime ? "pr-12" : ""
-            } text-gray-700 focus:outline-none focus:ring-2`}
+            className={style}
           /> :
           element == 'select' ? 
           <select 
@@ -62,17 +58,25 @@ const Input = ({
             value={value}
             onChange={onChange}
             required={required}
-            className={`w-full no-native-icon border ${
-              error
-                ? "border-red-500 focus:ring-red-500"
-                : "border-gray-300 focus:ring-blue-500"
-            } rounded-lg px-4 py-2 text-gray-700 focus:outline-none focus:ring-2`}
+            className={style}
           >
             <option value={''} disabled>Select {placeholder}</option>
             {
               options.map((option, index) => <option key={index} value={option}>{option}</option>)
             }
-          </select> : null
+          </select> : 
+          element == 'textarea' ? 
+          <textarea 
+            name={name} 
+            id={id}
+            value={value}
+            onChange={onChange}
+            required={required}
+            className={style}
+            rows={8}
+          >
+            { value }
+          </textarea> : null
         }
         {isDateOrTime && (
           <div
