@@ -371,8 +371,16 @@ exports.CustomerProfile = async (req, res)=>{
         }
         //res.status(200).json({message:`You're authenticated. Welcome ${req.username}, userId: ${req.userId}`})
         const [checkMyappointment] = await db.query(`
-            SELECT * 
+            SELECT 
+                appointment_id, 
+                s.username AS stylist_username, 
+                serv.hair_style AS hair_style, 
+                DATE_FORMAT(appointment_date, '%Y-%m-%d') AS appointment_date,
+                TIME_FORMAT(appointment_time, '%H:%i') AS appointment_time,
+                status 
                 FROM appointments 
+                JOIN stylists s USING(stylist_id) 
+                JOIN services serv USING(service_id)
                 WHERE customer_id = ? `,
             [userId])
         if(checkMyappointment.length === 0){
@@ -505,16 +513,24 @@ exports.stylistProfile = async (req, res)=>{
     try{
         const stylistId = req.stylistId
         const [checkStylist] = await db.query(`
-            SELECT * 
-                FROM stylists 
+            SELECT *
+                FROM stylists
                 WHERE stylist_id = ?`,
             [stylistId])
         if (checkStylist.length === 0){
             res.status(401).json({message: 'Not a stylist'})
         }
         const [myAppointments] = await db.query(`
-            SELECT *
-                FROM appointments
+            SELECT 
+                appointment_id, 
+                c.first_name AS customer_first_name, c.last_name AS customer_last_name, 
+                serv.hair_style AS hair_style, 
+                DATE_FORMAT(appointment_date, '%Y-%m-%d') AS appointment_date,
+                TIME_FORMAT(appointment_time, '%H:%i') AS appointment_time,
+                status 
+                FROM appointments 
+                JOIN customers c USING(customer_id)
+                JOIN services serv USING(service_id) 
                 WHERE stylist_id = ?`,
             [stylistId])
         if(myAppointments.length === 0){
@@ -662,4 +678,54 @@ exports.viewAppointments = async (req, res)=>{
         return res.status(500).json({message:"Error fetching appointments", err:err.stack})
     }
     
+}
+
+//review logic
+exports.createReview = async(req,res)=>{
+    try{
+        const checkReviewInput = await checkValidationResult(req)
+        if(checkReviewInput){
+            return res.status(401).json({message:"Please fix error", errors:checkAppointmentInput })
+        }
+        const {hairStyle, rating, feedback} = req.body
+        const userId = req.userId
+        const [checkCustomer] = await db.query(`
+            SELECT customer_id 
+                FROM customers 
+                WHERE customer_id = ?`,
+            [userId])
+        if(checkCustomer.length === 0){
+            res.status(401).json({message: `Not a customer`})
+        }
+        
+        const [queryService] = await db.query(`
+            SELECT service_id 
+                FROM services
+                WHERE hair_style = ?`,
+            [hairStyle])
+        if(queryService.length === 0){
+            res.status(401).json({message: 'Not a service you were offered'})
+        }
+        console.log("customer id", checkCustomer[0].customer_id)
+        console.log("service id: ", queryService[0].service_id)
+        const [checkReview] = await db.query(`
+            SELECT * 
+                FROM reviews
+                WHERE customer_id = ? 
+                AND service_id = ?`,
+            [checkCustomer[0].customer_id, queryService[0].service_id])
+        if(checkReview.length > 0){
+           return res.status(401).json({message:'Review already created'})
+        }
+        await db.query(`
+            INSERT INTO reviews
+                (customer_id, service_id, rating, feedback)
+                VALUE(?,?,?,?)`,
+            [checkCustomer[0].customer_id, queryService[0].service_id, rating, feedback])
+            res.status(201).json({message: 'Review successfully created'})
+    }catch(error){
+        console.log("Error creating review", error)
+        res.status(500).json({message:'Creating review failed', error:error.stack})
+
+    }
 }

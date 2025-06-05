@@ -10,7 +10,7 @@ const authenticateJWT = (req, res, next)=>{
     jwt.verify(token, process.env.JWT_SECRET, (err, decoded)=>{
         if(err) return res.status(403).json({message:'Invalid or expired token'});
 
-        req.userId = decoded.userId || decoded.adminId ;
+        req.userId = decoded.userId;
         req.adminId = decoded.adminId;
         req.stylistId = decoded.stylistId
         console.log('admin Id is: ',req.adminId);
@@ -19,6 +19,7 @@ const authenticateJWT = (req, res, next)=>{
         
 
         req.username = decoded.username // dont use admin username toavoid code comflict
+        console.log("whose username: ", req.username)
 
         req.role = decoded.role
         console.log('admin role',req.role);
