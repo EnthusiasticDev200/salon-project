@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stylist Dashboard</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 10px; border: 1px solid #ccc; text-align: left; }
+    button { margin-right: 5px; padding: 6px 12px; }
+  </style>
+</head>
+<body>
+
+  <h1>Stylist Dashboard</h1>
+  <p id="status">Connecting...</p>
+
+  <table id="appointmentsTable">
+    <thead>
+      <tr>
+        <th>Customer</th>
+        <th>Hairstyle</th>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="appointmentsBody"></tbody>
+  </table>
+
+  <script>
+    const stylistUsername = req.username; // Replace with actual logged-in stylist's username
+    const socket = io();
+
+    socket.on("connect", () => {
+      document.getElementById("status").textContent = "Connected as " + stylistUsername;
+      socket.emit("registerStylist", stylistUsername);
+    });
+
+    socket.on("appointmentNotification", (appointment) => {
+      addAppointmentRow(appointment);
+    });
+
+    function addAppointmentRow(appointment) {
+      const tbody = document.getElementById("appointmentsBody");
+      const row = document.createElement("tr");
+      row.setAttribute("data-id", appointment.id);
+
+      row.innerHTML = `
+        <td>${appointment.customerName}</td>
+        <td>${appointment.hairStyle}</td>
+        <td>${appointment.date}</td>
+        <td>${appointment.time}</td>
+        <td class="status">${appointment.status}</td>
+        <td>
+          <button onclick="respond('${appointment.id}', 'approved', '${appointment.customerUsername}', this)">Accept</button>
+          <button onclick="respond('${appointment.id}', 'not available', '${appointment.customerUsername}', this)">Decline</button>
+        </td>
+      `;
+
+      tbody.appendChild(row);
+    }
+
+    function respond(appointmentId, status, customerUsername, btn) {
+      socket.emit("stylistResponse", {
+        appointmentId,
+        status,
+        customerUsername
+      });
+
+      // Update UI
+      const row = btn.closest("tr");
+      row.querySelector(".status").textContent = status;
+      row.querySelectorAll("button").forEach(b => b.disabled = true);
+    }
+  </script>
+
+</body>
+</html>
