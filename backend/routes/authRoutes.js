@@ -19,8 +19,9 @@ const
     stylistTable, registerStylist,loginStylist, logoutStylist,viewStylists,
     serviceTable,createServices,viewServices,
     appointmentTable, createAppointment, viewAppointments,
-    reviewTable, createReview,
-    stylistProfile
+    reviewTable, createReview,viewReviews,
+    stylistProfile,
+
     
 } = require('../authController')
 
@@ -68,5 +69,5 @@ router.get('/appointment/view', authenticateJWT, requireSuperuser,viewAppointmen
 
 //review endpoint
 router.post('/review/create', validateReview, authenticateJWT, createReview)
-
+router.get("/review/view", viewReviews)
 module.exports = router

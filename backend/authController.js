@@ -729,3 +729,18 @@ exports.createReview = async(req,res)=>{
 
     }
 }
+
+exports.viewReviews = async (req, res)=>{
+    try{
+        const [getReviews] = await db.query(`
+            SELECT review_id, c.username, serv.hair_style, rating, feedback,rev.created_at
+                FROM reviews rev
+                JOIN customers c USING (customer_id)
+                JOIN services serv USING (service_id)
+            `)
+        res.status(200).json(getReviews)
+    }catch(error){
+        console.log("Error fetching reviews", error)
+        res.status(500).json({message:'Fetching reviews failed', error:error.stack})
+    }
+}
