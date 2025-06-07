@@ -7,6 +7,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import 'swiper/css/grid';
+import MotionDiv from '../Layout/MotionDiv';
 
 const items = [
   { name: 'Scott Lang', pImg: Img, title: 'Barber/Stylist' },
@@ -19,12 +20,7 @@ const items = [
 const Team = () => {
   return (
     <div className='py-12 px-6 md:px-24' id='team'>
-      <motion.div 
-        initial={{ opacity: 0, y: 100 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1 }}
-        viewport={{ once: true }}
-      >
+      <MotionDiv>
         <div className="text-center my-4">
           <h2 className="text-3xl md:text-4xl font-bold text-center text-white mb-2">Our Team</h2>
           <p className="text-xl font-light">Check out our styling professionals</p>
@@ -59,7 +55,7 @@ const Team = () => {
             return (
               <SwiperSlide key={index}>
                 <div
-                  className={`rounded-2xl h-[300px] md:h-[450px] text-white text-lg shadow-md bg-[#222] p-2 border-4 border-[#e0b836] relative group overflow-hidden`}
+                  className={`rounded-2xl h-[400px] md:h-[450px] text-white text-lg shadow-md bg-[#222] p-2 border-4 border-[#e0b836] relative group overflow-hidden`}
                   onMouseEnter={handleHoverStart}
                   onMouseLeave={handleHoverEnd}
                 >
@@ -79,7 +75,7 @@ const Team = () => {
             )
           })}
         </Swiper>
-      </motion.div>
+      </MotionDiv>
     </div>
     
   );

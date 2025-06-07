@@ -38,3 +38,4 @@ export const viewServices = () => API.get('/auth/service/view')
 
 // Reviews
 export const addReviews = data => API.post('/auth/review/create', data)
+export const viewReviews = () => API.get('/auth/review/view')

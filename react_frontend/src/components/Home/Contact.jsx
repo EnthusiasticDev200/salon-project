@@ -2,15 +2,13 @@ import React from 'react'
 import { motion } from "framer-motion";
 import Img from "./../../assets/bg1.jpg";
 import Logo from "./../../assets/logo.png";
+import MotionDiv from '../Layout/MotionDiv';
 
 const Contact = () => {
   return (
-    <motion.footer 
-      initial={{ opacity: 0, y: 100 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 1 }}
-      viewport={{ once: true }}
-      className='pt-12 px-6 md:px-24' id='contact'
+    <MotionDiv
+      className='pt-12 px-6 md:px-24' 
+      id='contact'
     >
       <div className="flex gap-16 flex-col md:flex-row">
         <div className="basis-full md:basis-1/3">
@@ -56,7 +54,7 @@ const Contact = () => {
         </div>
         <p className=' mt-4 md:mt-0'>Designed by <a href="https://onuohajephthah.netlify.app" className='text-accent font-semibold'>Onuoha Jephthah</a></p>
       </div>
-    </motion.footer>
+    </MotionDiv>
   )
 }
 

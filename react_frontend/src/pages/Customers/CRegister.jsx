@@ -1,10 +1,11 @@
-import { useContext, useState } from 'react'
+import { useContext, useState, useEffect } from 'react'
 import CustomerFormLayout from '../../components/Layout/CustomerFormLayout'
 import Input from '../../components/ui/Input'
 import axios from 'axios'
 import BG from "./../../assets/bg2.jpg";
 import { UserAuthContext } from '../../components/Context/UserAuthContext';
 import { Link } from 'react-router-dom';
+import Alert from '../../components/ui/Alert';
 
 const CRegister = () => {
   const { registerUser } = useContext(UserAuthContext)
@@ -17,6 +18,20 @@ const CRegister = () => {
     phoneNumber: '',
     password: '',
   })
+  const [alert, setAlert] = useState({
+    type: 'error',
+    message: ''
+  })
+  
+  useEffect(() => {
+    if (alert.message) {
+      const timeout = setTimeout(() => {
+        setAlert(prev => ({ ...prev, message: '' }));
+      }, 5000);
+    
+      return () => clearTimeout(timeout);
+    }
+  }, [alert.message]);
 
   const handleChange = input => e => {
     setFormValues({ ...formValues, [input]: e.target.value })
@@ -27,11 +42,17 @@ const CRegister = () => {
 
     try {
       const response = await registerUser(formValues)
-      console.log(response.data);
+      
+      if(response.success) {
+        setAlert({ type: 'success', message: response.data.message })
+      } else {
+        setAlert({ type: 'error', message: response.message })
+      }
       
       setFormValues({ firstName: '', lastName: '', username: '', email: '', phoneNumber: '', password: '' })
     } catch (error) {
       console.error('Error registering customer:', error.response?.data || error.message);
+      setAlert({ type: 'error', message: error.response?.data || error.message })
     }
   }
 
@@ -42,6 +63,12 @@ const CRegister = () => {
           <h1 className="text-3xl font-bold">Register</h1>
           <p className="text-xl font-light">Fill in your information</p>
         </div>
+        {
+          alert.message && 
+          <Alert type={alert.type}>
+            { alert.message }
+          </Alert>
+        }
         <Input 
           type="text"
           id="firstName"

@@ -1,9 +1,13 @@
 import React, { useEffect, useRef } from 'react'
 import Logo from './../../assets/logo.png'
 import { Link } from "react-router-dom";
+import Button from '../ui/Button';
+import { useContext } from 'react';
+import { UserAuthContext } from '../Context/UserAuthContext';
 
 const Navbar = () => {
   const navRef = useRef()
+  const { user } = useContext(UserAuthContext)
 
   useEffect(() => {
     const pageScroll = () => {
@@ -47,12 +51,14 @@ const Navbar = () => {
         </li>
       </ul>
       <div className="w-auto flex gap-2 items-center">
-        <Link to={'customer/login'} className='p-3'>
+        <Link to={`${ user ? 'customer/dashboard' : 'customer/login' }`} className='p-3'>
           <i className="ri-user-line"></i>
         </Link>
-        <a href="" className='py-2 px-4 bg-[#e0b836] hover:bg-[#a68b30] text-black rounded transition-all hidden md:inline-block'>
-          Book An Appointment
-        </a>
+        <Link to={`${ user ? 'customer/add-appointment' : 'customer/login' }`}>
+          <Button className={'hidden md:inline-block'}>
+            Book an Appointment
+          </Button>
+        </Link>
       </div>
     </nav>
   )

@@ -1,7 +1,7 @@
-import { useContext, useState } from 'react'
+import { useContext, useState, useEffect, useRef } from 'react'
 import CustomerFormLayout from '../../components/Layout/CustomerFormLayout'
 import Input from '../../components/ui/Input'
-import axios from 'axios'
+import Alert from '../../components/ui/Alert'
 import BG from "./../../assets/bg1.jpg";
 import { UserAuthContext } from '../../components/Context/UserAuthContext';
 import { Link, useNavigate } from 'react-router-dom';
@@ -9,11 +9,25 @@ import { Link, useNavigate } from 'react-router-dom';
 const CLogin = () => {
   const { loginUser } = useContext(UserAuthContext)
   const navigate = useNavigate()
+  const alertRef = useRef(null)
 
   const [formValues, setFormValues] = useState({
     email: '',
     password: '',
   })
+  const [alert, setAlert] = useState({
+    type: 'error',
+    message: ''
+  })
+  useEffect(() => {
+    if (alert.message) {
+      const timeout = setTimeout(() => {
+        setAlert(prev => ({ ...prev, message: '' }));
+      }, 5000);
+    
+      return () => clearTimeout(timeout);
+    }
+  }, [alert.message]);
 
   const handleChange = input => e => {
     setFormValues({ ...formValues, [input]: e.target.value })
@@ -27,9 +41,12 @@ const CLogin = () => {
 
       if(response.success) {
         navigate('/customer/dashboard')
+      } else {
+        setAlert({ type: 'error', message: response.message })
       }
       console.log(response.data);  
     } catch (error) {
+      setAlert({ type: 'error', message: error.response?.data || error.message })
       console.error('Error registering customer:', error.response?.data || error.message);
     }
   }
@@ -41,6 +58,12 @@ const CLogin = () => {
           <h1 className="text-3xl font-bold">Login</h1>
           <p className="text-xl font-light">Enter your details to login</p>
         </div>
+        {
+          alert.message && 
+          <Alert type={alert.type} ref={alertRef}>
+            { alert.message }
+          </Alert>
+        }
         <Input 
           type="email"
           id="email"

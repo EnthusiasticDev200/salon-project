@@ -1,15 +1,12 @@
 import React from 'react'
 import { motion } from "framer-motion";
 import Logo from "./../../assets/logo.png";
+import MotionDiv from '../Layout/MotionDiv';
 
 const About = () => {
   return (
     <div className='py-12 px-6 md:px-24' id='about'>
-      <motion.div
-        initial={{ opacity: 0, y: 100 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1 }}
-        viewport={{ once: true }}
+      <MotionDiv
         className="flex flex-col md:flex-row items-center gap-8"
       >
         <div className="basis-full md:basis-1/2">
@@ -46,7 +43,7 @@ const About = () => {
             So pull up, kick back, and let us take care of the rest. At KhleanCutz, you don’t just get a haircut — you get leveled up.
           </p>
         </div>
-      </motion.div>
+      </MotionDiv>
     </div>
   )
 }

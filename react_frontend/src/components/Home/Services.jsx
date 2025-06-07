@@ -1,9 +1,13 @@
-import React, { useState } from 'react'
 import { motion } from "framer-motion";
-import AppointmentModal from '../AppointmentModal';
+import Button from "../ui/Button";
+import { Link } from "react-router-dom";
+import { useContext } from "react";
+import { UserAuthContext } from "../Context/UserAuthContext";
+import MotionDiv from "../Layout/MotionDiv";
 
 const Services = () => {
-  const [modalIsOpen, setModalIsOpen] = useState(false)
+  const { user } = useContext(UserAuthContext)
+  console.log(sessionStorage.getItem('userInfo'));
 
   const services = [
     {
@@ -77,12 +81,7 @@ const Services = () => {
 
   return (
     <div className='py-12 px-6 md:px-24' id='services'>
-      <motion.div
-        initial={{ opacity: 0, y: 100 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1 }}
-        viewport={{ once: true }}
-      >
+      <MotionDiv>
         <div className="my-6 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-2">Our Services</h2>
           <p className="text-xl font-light">See what attracts people to us</p>
@@ -103,14 +102,20 @@ const Services = () => {
             </motion.div>
           ))}
         </div>
-        <div className="flex my-4 justify-center items-center">
-          <button onClick={() => setModalIsOpen(true)} className='py-4 px-8 bg-[#e0b836] hover:bg-[#a68b30] text-black rounded transition-all hidden md:inline-block'>
-            Book An Appointment
-          </button>
-        </div>
-      </motion.div>
-
-      <AppointmentModal modalOpen={modalIsOpen} setModalOpen={setModalIsOpen} />
+        <motion.div 
+          initial={{ opacity: 0, y: 100 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1 }}
+          viewport={{ once: true }}
+          className="flex my-4 justify-center items-center"
+        >
+          <Link to={`${ user ? 'customer/add-appointment' : 'customer/login' }`}>
+            <Button className={'py-4 px-8'}>
+              Book an Appointment
+            </Button>
+          </Link>
+        </motion.div>
+      </MotionDiv>
     </div>
   )
 }
