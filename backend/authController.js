@@ -107,6 +107,7 @@ exports.appointmentTable = async(req,res)=>{
             appointment_date DATE NOT NULL,
             appointment_time TIME NOT NULL,
             status VARCHAR(20) NOT NULL DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY fk_appointments_customers(customer_id)
             REFERENCES customers(customer_id)
                 ON UPDATE CASCADE
@@ -210,20 +211,25 @@ exports.logInAdmin = async (req, res)=>{
             return res.status(401).json({message:"Invalid password"})
         }
         const adminUser = checkAdmin[0]
-        const token = jwt.sign(
+        const payload =  
             {
-                adminId : adminUser.admin_id,
-                username : adminUser.username,
-                role : adminUser.role
-            }, 
+                adminId: adminUser.admin_id,
+                username: adminUser.username,
+                role: adminUser.role,
+            }
+        const adminToken = jwt.sign(
+            payload, 
             process.env.JWT_SECRET, 
             {expiresIn: "1h"})
-
-        res.cookie('token', token, 
+        
+        //drop any previous cookie
+        res.clearCookie('admin_token'); 
+        //setting up new cookie 
+        res.cookie('admin_token', adminToken, 
             {
-                httpOnly : 'true',
-                secure : 'false',
-                sameSite: 'strict',
+                httpOnly : true,
+                secure : false,
+                sameSite: 'Strict',
                 maxAge : 60*60*1000
             })
         res.status(200).json({message:`Welcome ${checkAdmin[0].username}`})
@@ -343,17 +349,27 @@ exports.logInCustomer =  async (req, res)=>{
         }
         // Now customer is a user. Create jwt
         const user = customer[0]
-        const token = jwt.sign({userId:user.customer_id, username:user.username }, process.env.JWT_SECRET, {expiresIn:'1h'})
-        
-        
-        //setting up cookie 
-        res.cookie('token', token, {
-            httpOnly : 'true',
-            secure : 'false',
-            sameSite: 'strict',
-            maxAge : 60*60*1000
-        })
-        res.json({message:`Login successful. Welcome ${user.username}`})
+        const payload = 
+        {
+            userId:user.customer_id, 
+            username:user.username,
+        }
+        const customerToken = jwt.sign(
+            payload, 
+            process.env.JWT_SECRET, 
+            {expiresIn:'1h'}
+        )
+        //drop any previous cookie
+        res.clearCookie('customer_token'); 
+        //setting up new cookie 
+        res.cookie('customer_token', customerToken, 
+            {
+                httpOnly : true,
+                secure : false,
+                sameSite: 'Strict',
+                maxAge : 60*60*1000
+            })
+        res.status(200).json({message:`Login successful. Welcome ${user.username}`})
     }catch(err){
         console.error("Error during customer login", err)
         res.status(500).json({message: 'Log in error', err:err.stack})
@@ -486,19 +502,23 @@ exports.loginStylist = async (req, res)=>{
             return res.status(401).json({message:"Invalid password"})
         }
         const stylistUser = checkStylist[0]
-        const token = jwt.sign(
+        const payload = 
             {
                 stylistId : stylistUser.stylist_id,
                 username : stylistUser.username,
-            }, 
+            }
+        const stylistToken = jwt.sign(
+            payload, 
             process.env.JWT_SECRET, 
             {expiresIn: "1h"})
-
-        res.cookie('token', token, 
+        //drop any previous cookie
+        res.clearCookie('tokstylist_tokenen'); 
+        //setting up new cookie 
+        res.cookie('stylist_token', stylistToken, 
             {
-                httpOnly : 'true',
-                secure : 'false',
-                sameSite: 'strict',
+                httpOnly : true,
+                secure : false,
+                sameSite: 'Strict',
                 maxAge : 60*60*1000
             })
         return res.status(200).json({message: `Welcome ${checkStylist[0].username}`})
