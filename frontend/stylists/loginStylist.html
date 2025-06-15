@@ -46,6 +46,7 @@
             if(response.ok){
                 console.log("Server response", data)
                 alert(`${data.message}`) 
+                window.location.href = "/salon/stylist/dashboard";
             }else{
                 console.log(`Error encountered: ${data.message}`)
                 alert(`Error: ${data.message}`) 
