@@ -118,7 +118,7 @@ app.get('/salon/createreview', (req, res)=>{
 // });
 
 
-app.listen(port, ()=>{
+server.listen(port, ()=>{
     console.log(`Server is running on http://localhost:${port}`)
 })
 
