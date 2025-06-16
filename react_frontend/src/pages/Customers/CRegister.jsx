@@ -24,6 +24,8 @@ const CRegister = () => {
   })
   
   useEffect(() => {
+    document.title = "Customer Register | KhleanCutz"
+
     if (alert.message) {
       const timeout = setTimeout(() => {
         setAlert(prev => ({ ...prev, message: '' }));

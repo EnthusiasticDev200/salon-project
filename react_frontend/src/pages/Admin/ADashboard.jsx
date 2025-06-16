@@ -12,6 +12,8 @@ const ADashboard = () => {
   const [clients, setClients] = useState(0)
 
   useEffect(() => {
+    document.title = "Admin Dashboard | KhleanCutz"
+
     const fetchAnalytics = async () => {
       try {
         const [serviceRes, appointmentRes, stylistRes] = await Promise.all([

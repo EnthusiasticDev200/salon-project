@@ -10,6 +10,8 @@ const CAppointments = () => {
   const { userProfile } = useContext(UserAuthContext)
   
     useEffect(() => {
+      document.title = "Appointments | KhleanCutz"
+
       const loadProfile = async () => {
         try {
           const response = await userProfile()

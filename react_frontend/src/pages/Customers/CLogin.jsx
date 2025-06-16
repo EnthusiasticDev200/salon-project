@@ -20,6 +20,8 @@ const CLogin = () => {
     message: ''
   })
   useEffect(() => {
+    document.title = "Customer Login | KhleanCutz"
+
     if (alert.message) {
       const timeout = setTimeout(() => {
         setAlert(prev => ({ ...prev, message: '' }));

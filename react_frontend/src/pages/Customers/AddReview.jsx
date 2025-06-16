@@ -26,6 +26,8 @@ const AddReview = () => {
   const [services, setServices] = useState([])
 
   useEffect(() => {
+    document.title = "Add Review | KhleanCutz"
+
     const loadServices = async () => {
       try {
         const response = await getServices()

@@ -23,6 +23,8 @@ const AddAppointment = () => {
   const alertRef = useRef(null)
 
   useEffect(() => {
+    document.title = "Add Appointment | KhleanCutz"
+
     const loadStylists = async () => {
       try {
         const response = await getAllStylists()

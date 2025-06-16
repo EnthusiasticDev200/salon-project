@@ -20,6 +20,7 @@ export const stylistLogin = data => API.post('/auth/stylist/login', data)
 export const stylistLogout = () => API.get('/auth/stylist/logout')
 export const allStylists = () => API.get('/auth/stylist/view')
 export const stylistProfile = () => API.get('/auth/stylist/profile')
+export const stylistInfo = () => API.get('/auth/stylist/me')
 
 // Customer
 export const customerRegister = data => API.post('/auth/customer/register', data)

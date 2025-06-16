@@ -36,10 +36,11 @@
             const body = {email, password}
             const response = await fetch('/auth/admin/login', {
                 method : "POST",
+                body : JSON.stringify(body),
+                credentials: 'include',
                 headers : {
                     "Content-Type" : "application/json"
-                },
-                body : JSON.stringify(body)
+                }
             })
             const data = await response.json()
             if(response.ok){

@@ -4,6 +4,7 @@ import BG from "./../../assets/bg2.jpg";
 import { StylistAuthContext } from '../../components/Context/StylistAuthContext';
 import Input from '../../components/ui/Input';
 import { Navigate, useNavigate } from 'react-router-dom';
+import Alert from '../../components/ui/Alert';
 
 const SLogin = () => {
   const { loginStylist, stylist } = useContext(StylistAuthContext)
@@ -11,10 +12,25 @@ const SLogin = () => {
     email: '',
     password: '',
   })
+  const [alert, setAlert] = useState({
+    type: 'error',
+    message: ''
+  })
+  useEffect(() => {
+    document.title = "Customer Login | KhleanCutz"
+
+    if (alert.message) {
+      const timeout = setTimeout(() => {
+        setAlert(prev => ({ ...prev, message: '' }));
+      }, 5000);
+    
+      return () => clearTimeout(timeout);
+    }
+  }, [alert.message]);
   const navigate = useNavigate()
 
   useEffect(() => {
-    console.log(sessionStorage.getItem('stylistInfo'), stylist);
+    document.title = "Stylist Login | KhleanCutz"
   }, [])
   
   
@@ -32,6 +48,8 @@ const SLogin = () => {
       if(response.success) {
         setFormValues({ email: '', password: '' });
         navigate('/stylist/dashboard')
+      } else {
+        setAlert({ type: 'error', message: response.message })
       }
     } catch (error) {
       console.error('Error logging in stylist:', error.response?.data || error.message);
@@ -45,6 +63,12 @@ const SLogin = () => {
           <h1 className="text-3xl font-bold">Login</h1>
           <p className="text-xl font-light">Enter your details to login</p>
         </div>
+        {
+          alert.message &&
+          <Alert type={alert.type}>
+            { alert.message }
+          </Alert>
+        }
         <Input 
           type="email"
           id="email"

@@ -8,6 +8,8 @@ const Appointments = () => {
   const [appointments, setAppointments] = useState([])
 
   useEffect(() => {
+    document.title = "View All Appointments | KhleanCutz"
+
     const loadServices = async () => {
       try {
         const response = await getAppointments()

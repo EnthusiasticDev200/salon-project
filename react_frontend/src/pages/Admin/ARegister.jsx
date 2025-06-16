@@ -1,9 +1,10 @@
-import { useContext, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import CustomerFormLayout from '../../components/Layout/CustomerFormLayout'
 import Input from '../../components/ui/Input'
 import axios from 'axios'
 import BG from "./../../assets/bg3.jpg";
 import { AdminAuthContext } from '../../components/Context/AdminAuthContext';
+import Alert from '../../components/ui/Alert';
 
 const ARegister = () => {
   const { registerAdmin } = useContext(AdminAuthContext)
@@ -14,6 +15,21 @@ const ARegister = () => {
     role: '',
     password: '',
   })
+  const [alert, setAlert] = useState({
+    type: 'error',
+    message: ''
+  })
+  useEffect(() => {
+    document.title = "Admin Register | KhleanCutz"
+  
+    if (alert.message) {
+      const timeout = setTimeout(() => {
+        setAlert(prev => ({ ...prev, message: '' }));
+      }, 5000);
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [alert.message]);
 
   const handleChange = input => e => {
     setFormValues({ ...formValues, [input]: e.target.value })
@@ -41,6 +57,14 @@ const ARegister = () => {
           <h1 className="text-3xl font-bold">Register</h1>
           <p className="text-xl font-light">Fill in your information</p>
         </div>
+
+        {
+          alert.message &&
+          <Alert type={ alert.type }>
+            { alert.message }
+          </Alert>
+        }
+
         <Input 
           type="text"
           id="username"

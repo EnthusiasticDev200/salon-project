@@ -3,6 +3,7 @@ import CustomerFormLayout from '../../components/Layout/CustomerFormLayout'
 import BG from "./../../assets/bg3.jpg";
 import { StylistAuthContext } from '../../components/Context/StylistAuthContext';
 import Input from '../../components/ui/Input';
+import { useEffect } from 'react';
 
 const SRegister = () => {
   const { registerStylist } = useContext(StylistAuthContext)
@@ -15,6 +16,11 @@ const SRegister = () => {
     password: '',
     specialization: ''
   })
+
+  useEffect(() => {
+    document.title = "Stylist Register | KhleanCutz"
+  }, [])
+  
 
   const handleChange = input => e => {
     setFormValues({ ...formValues, [input]: e.target.value })

@@ -17,10 +17,12 @@ const
     adminTable,registerAdmin, logInAdmin,logoutAdmin,changeAdminPassword,
     customerTable, registerCustomer, logInCustomer, CustomerProfile,logoutCustomer,viewCustomers,
     stylistTable, registerStylist,loginStylist, logoutStylist,viewStylists,
+    getStylistsUsername,
     serviceTable,createServices,viewServices,
     appointmentTable, createAppointment, viewAppointments,
     reviewTable, createReview,viewReviews,
     stylistProfile,
+   
 
     
 } = require('../authController')
@@ -60,6 +62,7 @@ router.get('/service/view',viewServices)
 router.post('/stylist/register', validateStylist,registerStylist)
 router.post('/stylist/login',loginStylist)
 router.get("/stylist/profile", authenticateJWT, stylistProfile)
+router.get('/stylist/me', authenticateJWT,getStylistsUsername)
 router.get('/stylist/logout', authenticateJWT,logoutStylist)
 router.get('/stylist/view', authenticateJWT, viewStylists)
 

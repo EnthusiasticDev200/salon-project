@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import DashboardLayout from '../../components/Layout/DashboardLayout'
 import { AdminAuthContext } from '../../components/Context/AdminAuthContext'
 import Input from '../../components/ui/Input'
@@ -10,6 +10,11 @@ const AddService = () => {
     hairStyle: '',
     price: ''
   })
+
+  useEffect(() => {
+    document.title = "Add Service | KhleanCutz"
+  }, [])
+  
 
   const handleChange = input => e => {
     setFormValues({ ...formValues, [input]: e.target.value })

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stylist Dashboard</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 10px; border: 1px solid #ccc; text-align: left; }
+    button { margin-right: 5px; padding: 6px 12px; }
+  </style>
+</head>
+<body>
+
+  <h1>Stylist Dashboard</h1>
+  <p id="status">Connecting...</p>
+
+  <table id="appointmentsTable">
+    <thead>
+      <tr>
+        <th>Customer</th>
+        <th>Username</th>
+        <th>Hairstyle</th>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="appointmentsBody"></tbody>
+  </table>
+
+  <script>
+    let socket; // makes socket global
+    fetch("http://localhost:3100/auth/stylist/me", {
+      method: 'GET',
+      credentials: "include",
+    })
+    .then(res => {
+      if (!res.ok) throw new Error("Unauthorized");
+      return res.json(); 
+    })
+    .then(data => {
+      const stylistUsername = data.username;
+  
+      document.getElementById("status").textContent = "Connected as " + stylistUsername;
+  
+      socket = io("http://localhost:3100", {
+          reconnection: false
+      });
+  
+      socket.on("connect", () => {
+        console.log("Socket connected:", socket.id);
+        socket.emit("joinRoom", stylistUsername);
+        console.log("Joining room:", stylistUsername);
+      });
+  
+      socket.on("appointmentNotification", (appointment) => {
+        console.log("Appointment received", appointment);
+        addAppointmentRow(appointment);
+      });
+  
+      function addAppointmentRow(appointment) {
+        if (!appointment || !appointment.appointmentId) {
+        console.error("Invalid appointment data received:", appointment);
+        return;
+        }
+
+        console.log("Received appointment:", appointment);
+        const tbody = document.getElementById("appointmentsBody");
+        const row = document.createElement("tr");
+        row.setAttribute("data-id", appointment.appointmentId);
+        // Ensure values are safely escaped and strings
+        const apptId = String(appointment.appointmentId);
+        const custUser = String(appointment.customerUsername); 
+  
+        row.innerHTML = `
+          <td>${appointment.customerName}</td>
+          <td>${appointment.customerUsername}</td>
+          <td>${appointment.hairStyle}</td>
+          <td>${appointment.date}</td>
+          <td>${appointment.time}</td>
+          <td class="status">${appointment.status}</td>
+          <td>
+            <button onclick="respond('${apptId}', 'approved', '${custUser}', this)">Accept</button>
+            <button onclick="respond('${apptId}', 'not available', '${custUser}', this)">Decline</button>
+          </td>
+        `;
+  
+        tbody.appendChild(row);
+      }
+    })
+    .catch(error => {
+      console.error("Failed to connect:", error);
+      document.getElementById("status").textContent = "Failed to connect";
+    });
+    function respond(appointmentId, status, customerUsername, btn) {
+        console.log("Respond clicked with:", { appointmentId, status, customerUsername });
+        if (!socket) {
+         console.error("Socket not initialized");
+        return;
+       }
+        socket.emit("stylistResponse", {
+          appointmentId : Number(appointmentId),
+          status,
+          customerUsername
+        });
+  
+        const row = btn.closest("tr");
+        row.querySelector(".status").textContent = status;
+        row.querySelectorAll("button").forEach(b => b.disabled = true);
+      }
+  </script>
+
+</body>
+</html>

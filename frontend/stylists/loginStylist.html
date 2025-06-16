@@ -36,15 +36,17 @@
             const body = {email, password}
             const response = await fetch('/auth/stylist/login', {
                 method : "POST",
+                body : JSON.stringify(body),
+                credentials: 'include',
                 headers : {
                     "Content-Type" : "application/json"
-                },
-                body : JSON.stringify(body)
+                }
             })
             const data = await response.json()
             if(response.ok){
                 console.log("Server response", data)
                 alert(`${data.message}`) 
+                window.location.href = "/salon/stylist/dashboard";
             }else{
                 console.log(`Error encountered: ${data.message}`)
                 alert(`Error: ${data.message}`) 

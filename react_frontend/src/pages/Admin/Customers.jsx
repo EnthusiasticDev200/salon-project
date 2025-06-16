@@ -8,6 +8,8 @@ const Customers = () => {
   const { getAllCustomers } = useContext(AdminAuthContext)
 
   useEffect(() => {
+    document.title = "View All Customers | KhleanCutz"
+
     const loadCustomers = async () => {
       try {
         const response = await getAllCustomers()

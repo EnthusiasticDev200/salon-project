@@ -4,12 +4,32 @@ import BG from "./../../assets/bg3.jpg";
 import Input from '../../components/ui/Input';
 import { AdminAuthContext } from '../../components/Context/AdminAuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import Alert from '../../components/ui/Alert';
 
 const ALogin = () => {
   const [formValues, setFormValues] = useState({
     email: '',
     password: '',
   })
+
+  const [alert, setAlert] = useState({
+    type: 'error',
+    message: ''
+  })
+
+  useEffect(() => {
+    document.title = "Admin Login | KhleanCutz"
+  
+    if (alert.message) {
+      const timeout = setTimeout(() => {
+        setAlert(prev => ({ ...prev, message: '' }));
+      }, 5000);
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [alert.message]);
+
   const { loginAdmin } = useContext(AdminAuthContext)
   const navigate = useNavigate()
 
@@ -27,9 +47,12 @@ const ALogin = () => {
       if(response.success) {
         setFormValues({ email: '', password: '' });
         navigate('/admin/dashboard')
+      } else {
+        setAlert({ type: 'error', message: response.message })
       }
     } catch (error) {
       console.error('Error logging in admin:', error.response?.data || error.message);
+      setAlert({ type: 'error', message: error.response?.data || error.message })
     }
   }
 
@@ -40,6 +63,12 @@ const ALogin = () => {
           <h1 className="text-3xl font-bold">Login</h1>
           <p className="text-xl font-light">Enter your details to login</p>
         </div>
+        {
+          alert.message &&
+          <Alert type={ alert.type }>
+            { alert.message }
+          </Alert>
+        }
         <Input 
           type="email"
           id="email"

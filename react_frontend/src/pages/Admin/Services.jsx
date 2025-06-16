@@ -8,6 +8,8 @@ const Services = () => {
   const [services, setServices] = useState([])
 
   useEffect(() => {
+    document.title = "View All Services | KhleanCutz"
+
     const loadServices = async () => {
       try {
         const response = await getServices()

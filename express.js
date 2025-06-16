@@ -84,6 +84,10 @@ app.get('/salon/regstylist', (req, res)=>{
 app.get('/salon/loginstylist', (req,res)=>{
     res.sendFile(path.join(__dirname, '/frontend/stylists/loginStylist.html'))
 })
+//route for stylist dashboard
+app.get('/salon/stylist/dashboard', (req, res)=>{
+    res.sendFile(path.join(__dirname, '/frontend/stylists/stylistDashboard.html'))
+})
 
 
 //route for appointment booking  html
@@ -121,7 +125,7 @@ app.get('/salon/createreview', (req, res)=>{
 // });
 
 
-app.listen(port, ()=>{
+server.listen(port, ()=>{
     console.log(`Server is running on http://localhost:${port}`)
 })
 

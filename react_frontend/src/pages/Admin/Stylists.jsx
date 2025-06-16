@@ -8,6 +8,8 @@ const Stylists = () => {
   const [stylists, setStylists] = useState([])
 
   useEffect(() => {
+    document.title = "View All Stylists | KhleanCutz"
+
     const loadStylists = async () => {
       try {
         const response = await getAllStylists()

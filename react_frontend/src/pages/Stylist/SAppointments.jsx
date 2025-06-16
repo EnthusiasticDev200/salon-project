@@ -10,6 +10,8 @@ const SAppointments = () => {
   const { getStylistProfile } = useContext(StylistAuthContext)
 
   useEffect(() => {
+    document.title = "Stylist Appointment | KhleanCutz"
+
     const loadProfile = async () =>  {
       try {
         const response = await getStylistProfile()

@@ -107,6 +107,7 @@ exports.appointmentTable = async(req,res)=>{
             appointment_date DATE NOT NULL,
             appointment_time TIME NOT NULL,
             status VARCHAR(20) NOT NULL DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY fk_appointments_customers(customer_id)
             REFERENCES customers(customer_id)
                 ON UPDATE CASCADE
@@ -156,14 +157,12 @@ try{
 }catch(error){
     console.log("Review's table not created", error.stack)
     return res.status(500).send("Review's table creation failed.")
-
 }
 }
 
 // creating registration for admin, customer, stylist, service and appointment
 
 //all about admin
-
 async function checkValidationResult(req){
     const errors = validationResult(req)
     console.log("validationErrorfunc: ", errors)
@@ -172,7 +171,6 @@ async function checkValidationResult(req){
     }
     return null
 }
-
 exports.registerAdmin = async (req, res) =>{
     try{
         const inputErrors = await checkValidationResult(req)
@@ -181,8 +179,6 @@ exports.registerAdmin = async (req, res) =>{
             return res.status(400).json({ message: 'Please correct input errors', errors: inputErrors });
         }
         const {username, email, phoneNumber, role, password} = req.body
-        console.log(req.body)
-
         const [checkAdmin] = await db.execute("SELECT * FROM admins WHERE email =?", [email])
         if(checkAdmin.length> 0){
             return res.status(400).json({message:"Admin already exist"})
@@ -199,7 +195,6 @@ exports.registerAdmin = async (req, res) =>{
 }
 exports.logInAdmin = async (req, res)=>{
     const {email, password} = req.body
-
     try{
         const [checkAdmin] = await db.query("SELECT * FROM admins WHERE email = ?", [email])
         if(checkAdmin.length === 0){
@@ -210,20 +205,24 @@ exports.logInAdmin = async (req, res)=>{
             return res.status(401).json({message:"Invalid password"})
         }
         const adminUser = checkAdmin[0]
-        const token = jwt.sign(
+        const payload =  
             {
-                adminId : adminUser.admin_id,
-                username : adminUser.username,
-                role : adminUser.role
-            }, 
+                adminId: adminUser.admin_id,
+                username: adminUser.username,
+                role: adminUser.role,
+            }
+        const adminToken = jwt.sign(
+            payload, 
             process.env.JWT_SECRET, 
             {expiresIn: "1h"})
-
-        res.cookie('token', token, 
+        //drop any previous cookie
+        res.clearCookie('admin_token'); 
+        //setting up new cookie 
+        res.cookie('admin_token', adminToken, 
             {
-                httpOnly : 'true',
-                secure : 'false',
-                sameSite: 'strict',
+                httpOnly : true,
+                secure : false,
+                sameSite: 'Strict',
                 maxAge : 60*60*1000
             })
         res.status(200).json({message:`Welcome ${checkAdmin[0].username}`})
@@ -235,18 +234,16 @@ exports.logInAdmin = async (req, res)=>{
 exports.logoutAdmin = async(req, res)=>{
     try{
         const email = req.email
-        res.clearCookie('token')
+        res.clearCookie('admin_token')
         res.status(200).json({message:`Logout successful. Bye ${email}`}) // saying undefined
     }catch(error){
         console.error("Error loggin out admin", error)
         res.status(500).json({message:"Error login admin out", error:error.stack})
     }
 }
-
 //find admin by email function. This prevents code replication
 async function findAdminByEmail(email) {
     try{
-        console.log("findadminfunc: ", email)
         const [queryAdmin] = await db.query("SELECT * FROM admins WHERE email=?",[email])
     if(queryAdmin.length === 0){
         return "Admin not found"; //throw new Error("Admin not found") don't throw error
@@ -255,10 +252,8 @@ async function findAdminByEmail(email) {
     }catch(error){
         console.error("Error finding admin", error)
         res.status(500).json({message:"Error finding admin", error:error.stack})
-    }
-     
+    }    
 }
-
 async function findStylistByEmail(email) {
     try{
         const [queryStylist] = await db.query("SELECT * FROM stylists WHERE email=?",[email])
@@ -271,14 +266,11 @@ async function findStylistByEmail(email) {
         res.status(500).json({message:"Error finding stylist", error:error.stack})
     }
 }
-
-
 // forgot admin password login
 exports.changeAdminPassword = async(req, res)=>{
    try{
     const {email, newPassword} = req.body
     const admin = await findAdminByEmail(email)
-    console.log("changeAdminFunc: ", admin)
     if(!admin){
         return res.status(404).json({message:"Admin not found"}) 
     }
@@ -296,8 +288,6 @@ exports.changeAdminPassword = async(req, res)=>{
     res.status(500).json({message:"Error updating admin password", error:error.stack})
    }
 }
-
-
 // all about customer
 exports.registerCustomer = async (req, res)=>{
 
@@ -307,7 +297,6 @@ exports.registerCustomer = async (req, res)=>{
             return res.status(400).json({ message: 'Please correct input errors', errors: validateInput });
         }
         const {firstName, lastName, username, email, phoneNumber, password} = req.body
-        console.log(req.body)
         const [customer] = await db.execute("SELECT * FROM customers WHERE email =?", [email])
         if(customer.length> 0){
             return res.status(400).json({message:"Customer already exist"})
@@ -324,12 +313,9 @@ exports.registerCustomer = async (req, res)=>{
         res.status(500).json({message:'Error registering customer', error})
     }
 }
-
 // customer login AND authentication with jwt(06/4/25)
 exports.logInCustomer =  async (req, res)=>{
     const {email, password} = req.body
-    console.log(req.body)
-
     try{
         const [customer] = await db.query("SELECT * FROM customers WHERE email = ?", [email])
         // check if customer exist
@@ -343,17 +329,27 @@ exports.logInCustomer =  async (req, res)=>{
         }
         // Now customer is a user. Create jwt
         const user = customer[0]
-        const token = jwt.sign({userId:user.customer_id, username:user.username }, process.env.JWT_SECRET, {expiresIn:'1h'})
-        
-        
-        //setting up cookie 
-        res.cookie('token', token, {
-            httpOnly : 'true',
-            secure : 'false',
-            sameSite: 'strict',
-            maxAge : 60*60*1000
-        })
-        res.json({message:`Login successful. Welcome ${user.username}`})
+        const payload = 
+        {
+            userId:user.customer_id, 
+            username:user.username,
+        }
+        const customerToken = jwt.sign(
+            payload, 
+            process.env.JWT_SECRET, 
+            {expiresIn:'1h'}
+        )
+        //drop any previous cookie
+        res.clearCookie('customer_token'); 
+        //setting up new cookie 
+        res.cookie('customer_token', customerToken, 
+            {
+                httpOnly : true,
+                secure : false,
+                sameSite: 'Strict',
+                maxAge : 60*60*1000
+            })
+        res.status(200).json({message:`Login successful. Welcome ${user.username}`})
     }catch(err){
         console.error("Error during customer login", err)
         res.status(500).json({message: 'Log in error', err:err.stack})
@@ -386,43 +382,35 @@ exports.CustomerProfile = async (req, res)=>{
         if(checkMyappointment.length === 0){
             res.status(401).json({message: "You have not booked any appointment"})
         }
-        console.log("my appointment", [checkMyappointment])
         res.status(200).send([checkMyappointment])
     }catch(err){
         console.error("Error fetching customer profile", err)
         res.status(500).json({message: 'Get profile error', err:err.stack})
     }
 }
-
 exports.logoutCustomer = async(req, res)=>{
     try{
         const username = req.username
-        res.clearCookie('token')
+        res.clearCookie('customer_token')
         res.status(200).json({message:`Logout successful. Bye ${username}`})
     }catch(error){
         console.error("Error loggin out customer", error)
         res.status(500).json({message:"Error login customer out", error:error.stack})
     }
 }
-
 exports.viewCustomers = async (req, res)=>{
     try{
         const [getCustomer] = await db.query
         ("SELECT customer_id, first_name, last_name, username, email, phone_number FROM customers")
-        console.log("services", getCustomer)
         return res.status(200).json(getCustomer)
     }catch(err){
         console.error("Gettng customers failed", err)
         res.status(500).json({message: 'Error fetching customers', err:err.stack})
-    }
-       
+    }      
 }
-
 //services logic
 exports.createServices = async (req, res)=>{
     const {hairStyle, price} = req.body
-    console.log(req.body)
-
     try{
         const [checkHairStyle] = await db.execute("SELECT * FROM services WHERE hair_style =?", [hairStyle])
         if(!checkHairStyle || checkHairStyle.length === 0){
@@ -436,20 +424,14 @@ exports.createServices = async (req, res)=>{
         console.error("Error detected", err)
         res.status(500).json({message:"Error detected in creating service", err:err.stack})
     }
-
-    
 }
 
 exports.viewServices = async (req, res)=>{
     const [getSerivices] = await db.query("SELECT * FROM services")
-    console.log("services", getSerivices)
     return res.status(200).send(getSerivices)
-    
-    
 }
 // stylist logic
-exports.registerStylist = async (req, res)=>{
-    
+exports.registerStylist = async (req, res)=>{   
     try{
         const checkStylistInput = await checkValidationResult(req)
         if(checkStylistInput){
@@ -473,7 +455,6 @@ exports.registerStylist = async (req, res)=>{
         res.status(500).json({message:'Error registering stylist', error})
     }
 }
-
 exports.loginStylist = async (req, res)=>{
     try{
         const {email, password} = req.body
@@ -486,29 +467,48 @@ exports.loginStylist = async (req, res)=>{
             return res.status(401).json({message:"Invalid password"})
         }
         const stylistUser = checkStylist[0]
-        const token = jwt.sign(
+        const payload = 
             {
                 stylistId : stylistUser.stylist_id,
                 username : stylistUser.username,
-            }, 
+            }
+        const stylistToken = jwt.sign(
+            payload, 
             process.env.JWT_SECRET, 
             {expiresIn: "1h"})
-
-        res.cookie('token', token, 
+        //drop any previous cookie
+        res.clearCookie('stylist_token'); 
+        //setting up new cookie 
+        res.cookie('stylist_token', stylistToken, 
             {
-                httpOnly : 'true',
-                secure : 'false',
-                sameSite: 'strict',
+                httpOnly : true,
+                secure : false,
+                sameSite: 'Strict',
                 maxAge : 60*60*1000
             })
         return res.status(200).json({message: `Welcome ${checkStylist[0].username}`})
     }catch(error){
         console.error('Error log in stylist', error)
         return res.status(500).json({message:"Error loggig in stylist", error:error.stack})
-
     }
 }
-
+exports.getStylistsUsername = async (req, res)=>{
+    try{
+        const stylistUsername = req.username
+        const [getStylist] = await db.query(`
+            SELECT *
+                FROM stylists
+                WHERE username = ?`,
+            [stylistUsername])
+        if(getStylist.length === 0){
+            res.status(401).json({message: 'Stylist username does not exist'})
+        }
+        return res.status(200).json({ username: getStylist[0].username });
+    }catch(error){
+        console.error('Error getting stylist username', error)
+        return res.status(500).json({message:"Failed fetching stylist username", error:error.stack})
+    }
+}
 exports.stylistProfile = async (req, res)=>{
     try{
         const stylistId = req.stylistId
@@ -536,7 +536,7 @@ exports.stylistProfile = async (req, res)=>{
         if(myAppointments.length === 0){
             res.status(401).json({message:"No appointments record found"})
         }
-        res.status(200).send([myAppointments])
+        //res.status(200).send([myAppointments])
     }catch(error){
         console.error('Error getting stylist profile', error)
         return res.status(500).json({message:"Stylist profile error", error:error.stack})
@@ -545,29 +545,23 @@ exports.stylistProfile = async (req, res)=>{
 exports.logoutStylist = async (req, res)=>{
     try{
         const username = req.username
-    res.clearCookie('token')
+    res.clearCookie('stylist_token')
     res.status(200).json({message:`Logout succesfully. Bye ${username}`})
     }catch(error){
         console.error('Error loggin out stylist', error)
         return res.status(500).json({message:"Error loggig out stylist", error:error.stack})
-
     }
-    
 }
 exports.viewStylists = async (req, res)=>{
     try{
         const [getStylists] = await db.query
         ("SELECT stylist_id, first_name, last_name, username, email, phone_number FROM stylists")
-        console.log("stylists", getStylists)
         return res.status(200).send(getStylists)   
     }catch(err){
         console.error("Getting stylists failed", err)
         return res.status(500).json({message:"Error fetching stylists", err:err.stack})
-    }
-    
+    }    
 }
-
-
 //appointments logic
 exports.createAppointment = async (req, res) =>{
     
@@ -577,17 +571,14 @@ exports.createAppointment = async (req, res) =>{
             return res.status(401).json({message:"Please fix error", errors:checkAppointmentInput })
         }
         const {stylistUsername,hairStyle, appointmentDate, appointmentTime, status} = req.body
-   
+
         const userId = req.userId
         const [queryCustomer] = await db.query('SELECT * FROM customers WHERE customer_id = ?', [userId])
-        console.log('the user: ', queryCustomer[0].username);
-
         const value = (stylistUsername)
         const [queryStylist] = await db.query("SELECT stylist_id FROM stylists WHERE username = ?", value)
         if(queryStylist.length === 0){
             return res.status(401).json({message:"Invalid stylist username"})
         }
-        
         const [queryService] = await db.query(`
             SELECT * 
                 FROM services 
@@ -625,7 +616,7 @@ exports.createAppointment = async (req, res) =>{
             return res.status(401).json({message:"Not stylist's area of specialty"})
         }
         const apValue = [queryCustomer[0].customer_id,queryStylist[0].stylist_id, queryService[0].service_id, appointmentDate, appointmentTime, 'pending']
-        await db.query(`
+        const [insertResult] = await db.query(`
             INSERT INTO appointments
             (
                 customer_id, stylist_id, service_id, 
@@ -636,25 +627,21 @@ exports.createAppointment = async (req, res) =>{
         )    
         const appointmentData = 
         {
-            customerName : queryCustomer[0].firstName + ' ' + queryCustomer[0].lastName,
+            appointmentId : insertResult.insertId,
+            customerName : queryCustomer[0].first_name + ' ' + queryCustomer[0].last_name,
+            customerUsername : queryCustomer[0].username,
+            hairStyle : hairStyle,
             date : appointmentDate,
             time : appointmentTime,
-            hairStyle : hairStyle,
             status : 'pending'
         }
         notifyStylist(stylistUsername, appointmentData)
-    
         return res.status(201).json({message: `Appointment booked and stylist notified`})
-
-
     }catch(err){
         console.error("Appointment booking failed", err)
         return res.status(500).json({message:"Appointment creation failed", err:err.stack})
     }
-
-
 }
-
 exports.viewAppointments = async (req, res)=>{
     try{
         const [getAppointments] = await db.query(`
@@ -676,10 +663,8 @@ exports.viewAppointments = async (req, res)=>{
     }catch(err){
         console.error("Getting appointments failed", err)
         return res.status(500).json({message:"Error fetching appointments", err:err.stack})
-    }
-    
+    }   
 }
-
 //review logic
 exports.createReview = async(req,res)=>{
     try{
@@ -697,7 +682,6 @@ exports.createReview = async(req,res)=>{
         if(checkCustomer.length === 0){
             res.status(401).json({message: `Not a customer`})
         }
-        
         const [queryService] = await db.query(`
             SELECT service_id 
                 FROM services
@@ -726,10 +710,8 @@ exports.createReview = async(req,res)=>{
     }catch(error){
         console.log("Error creating review", error)
         res.status(500).json({message:'Creating review failed', error:error.stack})
-
     }
 }
-
 exports.viewReviews = async (req, res)=>{
     try{
         const [getReviews] = await db.query(`

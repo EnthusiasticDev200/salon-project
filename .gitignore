@@ -6,3 +6,4 @@ workingCustomerlogic.js
 unmodifiedLoginCustomer.html
 *.json
 /node_modules
+/archive
