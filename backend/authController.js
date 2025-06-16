@@ -355,6 +355,24 @@ exports.logInCustomer =  async (req, res)=>{
         res.status(500).json({message: 'Log in error', err:err.stack})
     }
 }
+exports.getCustomerUsername = async (req, res)=>{
+    try{
+        const customerUsername = req.username
+        const [getCustomer] = await db.query(`
+            SELECT username
+                FROM customers
+                WHERE username = ?`,
+            [customerUsername])
+        if(getCustomer.length === 0){
+            return res.status(401).json({message: 'Customer username does not exist'})
+        }
+        return res.status(200).json({ username: getCustomer[0].username });
+    }catch(error){
+        console.error('Error getting customer username', error)
+        return res.status(500).json({message:"Failed fetching customer username", error:error.stack})
+    }
+}
+
 exports.CustomerProfile = async (req, res)=>{
     const userId = req.userId 
     if(!req.userId){
@@ -500,7 +518,7 @@ exports.getStylistsUsername = async (req, res)=>{
                 WHERE username = ?`,
             [stylistUsername])
         if(getStylist.length === 0){
-            res.status(401).json({message: 'Stylist username does not exist'})
+            return res.status(401).json({message: 'Stylist username does not exist'})
         }
         return res.status(200).json({ username: getStylist[0].username });
     }catch(error){

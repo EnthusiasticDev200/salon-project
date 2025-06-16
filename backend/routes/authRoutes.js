@@ -15,13 +15,15 @@ const
 const
 {
     adminTable,registerAdmin, logInAdmin,logoutAdmin,changeAdminPassword,
-    customerTable, registerCustomer, logInCustomer, CustomerProfile,logoutCustomer,viewCustomers,
+    customerTable, registerCustomer, logInCustomer, CustomerProfile,logoutCustomer,
+    viewCustomers,getCustomerUsername,
     stylistTable, registerStylist,loginStylist, logoutStylist,viewStylists,
     getStylistsUsername,
     serviceTable,createServices,viewServices,
     appointmentTable, createAppointment, viewAppointments,
     reviewTable, createReview,viewReviews,
     stylistProfile,
+    
    
 
     
@@ -49,6 +51,7 @@ router.put('/admin/updatepassword',changeAdminPassword)
 router.post('/customer/register', validateCustomer,registerCustomer)
 router.post('/customer/login',logInCustomer)
 //customer's protected routes
+router.get('/customer/me', authenticateJWT, getCustomerUsername)
 router.get("/customer/profile", authenticateJWT, CustomerProfile) 
 router.get('/customer/profile/logout', authenticateJWT,logoutCustomer)
 router.get('/customer/view', authenticateJWT,requireSuperuser, viewCustomers)
