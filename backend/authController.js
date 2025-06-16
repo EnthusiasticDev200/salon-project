@@ -536,7 +536,7 @@ exports.stylistProfile = async (req, res)=>{
         if(myAppointments.length === 0){
             res.status(401).json({message:"No appointments record found"})
         }
-        //res.status(200).send([myAppointments])
+        return res.status(200).send([myAppointments])
     }catch(error){
         console.error('Error getting stylist profile', error)
         return res.status(500).json({message:"Stylist profile error", error:error.stack})
