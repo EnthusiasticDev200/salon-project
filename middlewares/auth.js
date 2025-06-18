@@ -13,7 +13,7 @@ const authenticateJWT = (req, res, next)=>{
        try{
             decoded = jwt.verify(adminToken, process.env.JWT_SECRET)
             req.adminId = decoded.adminId || null;
-            req.username = decoded.username || null
+            req.adminUsername = decoded.adminUsername || null
             req.role = decoded.role || null
        }catch(error){
             console.warn("Invalid token")
@@ -24,7 +24,6 @@ const authenticateJWT = (req, res, next)=>{
             decoded = jwt.verify(customerToken, process.env.JWT_SECRET)
             req.userId = decoded.userId || null;
             req.username = decoded.username || null;
-                 
         }catch(error){
             console.warn("Invalid token")
         }
@@ -33,8 +32,7 @@ const authenticateJWT = (req, res, next)=>{
         try{
             decoded = jwt.verify(stylistToken, process.env.JWT_SECRET)
             req.stylistId = decoded.stylistId || null;
-            req.username = decoded.username || null;
-            
+            req.stylistUsername = decoded.stylistUsername || null;
         }catch(error){
             console.warn("Invalid token")
         }

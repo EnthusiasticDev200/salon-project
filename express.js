@@ -70,6 +70,10 @@ app.get('/salon/regcustomer', (req, res)=>{
 app.get('/salon/logincustomer', (req, res)=>{
     res.sendFile(path.join(__dirname, '/frontend/customers/loginCustomer.html'))
 })
+//route for customer dashboard
+app.get('/salon/customer/dashboard', (req, res)=>{
+    res.sendFile(path.join(__dirname, '/frontend/customers/customerDashboard.html'))
+})
 
 // route for creating services  html
 app.get('/salon/addservice', (req, res)=>{
