@@ -407,7 +407,7 @@ exports.CustomerProfile = async (req, res)=>{
 }
 exports.logoutCustomer = async(req, res)=>{
     try{
-        const username = req.username
+        const username = req.username;
         res.clearCookie('customer_token')
         res.status(200).json({message:`Logout successful. Bye ${username}`})
     }catch(error){
@@ -487,7 +487,7 @@ exports.loginStylist = async (req, res)=>{
         const payload = 
             {
                 stylistId : stylistUser.stylist_id,
-                username : stylistUser.username,
+                stylistUsername : stylistUser.username,
             }
         const stylistToken = jwt.sign(
             payload, 
@@ -511,7 +511,7 @@ exports.loginStylist = async (req, res)=>{
 }
 exports.getStylistsUsername = async (req, res)=>{
     try{
-        const stylistUsername = req.username
+        const stylistUsername = req.stylistUsername
         const [getStylist] = await db.query(`
             SELECT *
                 FROM stylists
@@ -534,16 +534,17 @@ exports.stylistProfile = async (req, res)=>{
                 FROM stylists
                 WHERE stylist_id = ?`,
             [stylistId])
-        if (checkStylist.lenght === 0){
+        if (checkStylist.length === 0){
             res.status(401).json({message: 'Not a stylist'})
         }
         const [myAppointments] = await db.query(`
             SELECT 
-                appointment_id, 
-                c.first_name AS customer_first_name, c.last_name AS customer_last_name, 
-                serv.hair_style AS hair_style, 
-                DATE_FORMAT(appointment_date, '%Y-%m-%d') AS appointment_date,
-                TIME_FORMAT(appointment_time, '%H:%i') AS appointment_time,
+                appointment_id AS appointmentId, 
+                CONCAT(c.first_name, " ", c.last_name) AS customerName,
+                c.username AS customerUsername, 
+                serv.hair_style AS hairStyle, 
+                DATE_FORMAT(appointment_date, '%Y-%m-%d') AS date,
+                TIME_FORMAT(appointment_time, '%H:%i') AS time,
                 status 
                 FROM appointments 
                 JOIN customers c USING(customer_id)
@@ -551,9 +552,9 @@ exports.stylistProfile = async (req, res)=>{
                 WHERE stylist_id = ?`,
             [stylistId])
         if(myAppointments.length === 0){
-            res.status(401).json({message:"No appointments record found"})
+            return res.status(200).json({message:`No appointment: ${myAppointments}`})
         }
-        return res.status(200).send([myAppointments])
+        return res.status(200).json(myAppointments)
     }catch(error){
         console.error('Error getting stylist profile', error)
         return res.status(500).json({message:"Stylist profile error", error:error.stack})
@@ -561,9 +562,9 @@ exports.stylistProfile = async (req, res)=>{
 }
 exports.logoutStylist = async (req, res)=>{
     try{
-        const username = req.username
-    res.clearCookie('stylist_token')
-    res.status(200).json({message:`Logout succesfully. Bye ${username}`})
+        const username = req.stylistUsername
+        res.clearCookie('stylist_token')
+        res.status(200).json({message:`Logout succesfully. Bye ${username}`})
     }catch(error){
         console.error('Error loggin out stylist', error)
         return res.status(500).json({message:"Error loggig out stylist", error:error.stack})
