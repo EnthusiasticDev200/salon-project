@@ -34,38 +34,47 @@
 
   <script>
     let socket; // makes socket global
-    fetch("http://localhost:3100/auth/stylist/me", {
-      method: 'GET',
-      credentials: "include",
-    })
-    .then(res => {
-      if (!res.ok) throw new Error("Unauthorized");
-      return res.json(); 
-    })
-    .then(data => {
-      const stylistUsername = data.username;
-  
-      document.getElementById("status").textContent = "Connected as " + stylistUsername;
-  
-      socket = io("http://localhost:3100", {
+    async function stylistDash(){
+      try{
+        const response = await fetch("http://localhost:3100/auth/stylist/me", 
+        {
+          method: 'GET',
+          credentials: "include",
+        })
+        if (!response.ok) throw new Error ("Unauthorized")
+        const data = await response.json()
+        const stylistUsername = data.username;
+
+        document.getElementById("status").textContent = "Connected as " + stylistUsername;
+        
+        const appointmentRes = await fetch("http://localhost:3100/auth/stylist/profile", 
+        {
+          method : 'GET',
+          credentials : 'include'  
+        })
+        const appointments = await appointmentRes.json()
+        console.log("Appointments fetched from profile:", appointments);
+        appointments.forEach(addAppointmentRow);
+
+        socket = io("http://localhost:3100", {
           reconnection: false
-      });
+        });
   
-      socket.on("connect", () => {
-        console.log("Socket connected:", socket.id);
-        socket.emit("joinRoom", stylistUsername);
-        console.log("Joining room:", stylistUsername);
-      });
+        socket.on("connect", () => {
+          console.log("Socket connected:", socket.id);
+          socket.emit("joinRoom", stylistUsername);
+          console.log("Joining room:", stylistUsername);
+        });
   
-      socket.on("appointmentNotification", (appointment) => {
-        console.log("Appointment received", appointment);
-        addAppointmentRow(appointment);
-      });
+        socket.on("appointmentNotification", (appointment) => {
+          console.log("Appointment received", appointment);
+          addAppointmentRow(appointment);
+        });
   
-      function addAppointmentRow(appointment) {
-        if (!appointment || !appointment.appointmentId) {
-        console.error("Invalid appointment data received:", appointment);
-        return;
+        function addAppointmentRow(appointment) {
+          if (!appointment || !appointment.appointmentId) {
+            console.error("Invalid appointment data received:", appointment);
+          return;
         }
 
         console.log("Received appointment:", appointment);
@@ -91,11 +100,12 @@
   
         tbody.appendChild(row);
       }
-    })
-    .catch(error => {
-      console.error("Failed to connect:", error);
-      document.getElementById("status").textContent = "Failed to connect";
-    });
+      }catch(error){
+        console.log("Error displaying stylist dashboard", error)
+      }
+    }
+    stylistDash();
+    
     function respond(appointmentId, status, customerUsername, btn) {
         console.log("Respond clicked with:", { appointmentId, status, customerUsername });
         if (!socket) {
