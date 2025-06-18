@@ -54,11 +54,16 @@
         socket.emit("joinCustomerRoom", customerUsername);
         console.log("Joining customer room:", customerUsername);
       });
-  
-      socket.on("appointmentNotification", (appointment) => {
-        console.log("Appointment received", appointment);
+      
+
+      socket.on("appointmentStatusUpdated", (appointmentId, status)=>{
+        console.log(`Stylist responsed to appointment. New status: ${status}`);
         addAppointmentRow(appointment);
-      });
+        })
+    //   socket.on("appointmentNotification", (appointment) => {
+    //     console.log("Appointment received", appointment);
+    //     addAppointmentRow(appointment);
+    //   });
   
       function addAppointmentRow(appointment) {
         if (!appointment || !appointment.appointmentId) {

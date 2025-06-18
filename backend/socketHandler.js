@@ -18,6 +18,10 @@ function initSocket(server){
           socket.join(stylistUsername);
           console.log(`Socket ${socket.id} joined room: ${stylistUsername}`);
         });
+        socket.on("joinCustomerRoom", (customerUsername)=>{
+            socket.join(customerUsername);
+            console.log(`Socket ${socket.id} joined customer room: ${customerUsername};` )
+        })
         //stylist response to appointment
         socket.on("stylistResponse", async ({ appointmentId, status, customerUsername }) => {
             try{
@@ -34,7 +38,7 @@ function initSocket(server){
                 );
                 console.log(`Appointment ${appointmentId} updated to status '${status}'`);
                 // (Optional) Notify the customer
-                io.to(`customer_${customerUsername}`).emit("AppointmentStatusUpdated", {
+                io.to(`customer_${customerUsername}`).emit("appointmentStatusUpdated", {
                     appointmentId,
                     status
                 });
