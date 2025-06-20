@@ -549,7 +549,8 @@ exports.stylistProfile = async (req, res)=>{
                 FROM appointments 
                 JOIN customers c USING(customer_id)
                 JOIN services serv USING(service_id) 
-                WHERE stylist_id = ?`,
+                WHERE stylist_id = ?
+                ORDER BY appointment_date DESC, appointment_time DESC`,
             [stylistId])
         if(myAppointments.length === 0){
             return res.status(200).json({message:`No appointment: ${myAppointments}`})
@@ -628,7 +629,6 @@ exports.createAppointment = async (req, res) =>{
                 AND appointment_time = ?`,
             [appointmentDate, appointmentTime])
         if(reviewAppointment.length > 0){
-            console.log("stylist appointment date and time ocuupied")
             return res.status(400).json(
                 {message:'Appointment date and time occupied. Please reschedule'})
         }
@@ -686,6 +686,7 @@ exports.viewAppointments = async (req, res)=>{
                 JOIN customers c USING(customer_id)
                 JOIN stylists s USING(stylist_id) 
                 JOIN services serv USING(service_id)
+                ORDER BY appointment_date DESC, appointment_time DESC
         `)
         console.log("appointment", getAppointments)
         return res.status(200).json(getAppointments)
