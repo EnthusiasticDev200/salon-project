@@ -621,6 +621,17 @@ exports.createAppointment = async (req, res) =>{
             console.log("appointmentDetails", checkAppointment)
             return res.status(400).json({message:"Appointment already booked for the week"});
         }
+        const [reviewAppointment] = await db.query(`
+            SELECT stylist_id, appointment_date, appointment_time
+                FROM appointments  
+                WHERE appointment_date = ?
+                AND appointment_time = ?`,
+            [appointmentDate, appointmentTime])
+        if(reviewAppointment.length > 0){
+            console.log("stylist appointment date and time ocuupied")
+            return res.status(400).json(
+                {message:'Appointment date and time occupied. Please reschedule'})
+        }
         const [checkStylistSpec] = await db.query(`
             SELECT 
                 username, specialization 
