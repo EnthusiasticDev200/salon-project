@@ -1,0 +1,6 @@
+export { default as CLogin } from './CLogin'
+export { default as CRegister } from './CRegister'
+export { default as CDashboard } from './CDashboard'
+export { default as CAppointments } from './CAppointments'
+export { default as AddAppointment } from './AddAppointment'
+export { default as AddReview } from './AddReview'
