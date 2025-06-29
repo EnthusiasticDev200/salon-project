@@ -6,7 +6,7 @@ function initSocket(server){
     const {Server} = require('socket.io')
     io = new Server(server, {
         cors : {
-            origin: "http://localhost:3100",
+            origin: "http://localhost:5173",
             methods: ["GET", "POST"],
             credentials: true
         }
@@ -32,6 +32,16 @@ function initSocket(server){
                     return;
                 }
                 // Update in database
+                const [queryAppointment] = await db.query(`
+                    SELECT status 
+                    FROM appointments
+                    WHERE appointment_id = ?
+                    `, [appointmentId])
+                if(queryAppointment[0].status !== 'pending'){
+                    console.log("new appointment status", queryAppointment[0])
+                    console.warn("Appointment already handled")
+                    return
+                }
                 await db.query(
                 "UPDATE appointments SET status = ? WHERE appointment_id = ?",
                     [status, appointmentId]
