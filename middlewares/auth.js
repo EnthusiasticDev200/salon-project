@@ -38,7 +38,7 @@ const authenticateJWT = (req, res, next)=>{
         }
     }
 
-    // if not user, ctylist and admin
+    // if not user, stylist and admin
     if (!req.userId && !req.stylistId && !req.adminId) {
         return res.status(401).json({ message: 'Access denied. Unauthorized!' });
     }
@@ -51,5 +51,21 @@ const requireSuperuser = async(req, res, next)=>{
     next();
 }
 
+const verifyOtp = async (req, res,next) =>{
+    try{
+        const jwtOtp = req.cookies.jwtOtp
+        console.log('jwtOtp from midWARE', jwtOtp)
+        if(!jwtOtp) return res.status(401).json({message: 'No OTP token fond'})
 
-module.exports = {authenticateJWT ,requireSuperuser} //using named export
+        const decoded = jwt.verify(jwtOtp, process.env.JWT_SECRET)
+        req.jwtOtp = decoded;
+        next() 
+    }catch(error){
+        console.log('OTP verification failed', error)
+        return res.status(500).json({message: 'Invalid or Expired OTP token'})
+    }
+   
+}
+
+
+module.exports = {authenticateJWT ,requireSuperuser, verifyOtp} //using named export
