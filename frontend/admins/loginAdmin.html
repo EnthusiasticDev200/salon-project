@@ -19,13 +19,13 @@
 
         <label for="psw">Password</label>
         <input type="password" id="psw" name="psw" required>
-        <a href="/salon/admin/changepw">Forgot Password?</a>
+        <a href="/salon/otp">Forgot Password?</a> 
+        <!--changed href from changepw to otp route-->
         <button type="submit">Log In</button>
       
     </form>
     
     <script>
-        // customer login
         document.getElementById("logInAdmin").addEventListener('submit', async (e)=>{
             e.preventDefault()
             
@@ -54,11 +54,7 @@
             console.log(`Error logging in admin: ${err.message}`);
             alert(`Error logging in admin: ${err.message}`);
         }
-
         })
-
-        // get customer profile
-
     </script>
 </body>
 </html>
