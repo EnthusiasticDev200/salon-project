@@ -44,6 +44,10 @@ app.get('/salon/stylist/dashboard', (req, res)=>{
 app.get('/salon/appointment', (req, res)=>{
     res.sendFile(path.join(__dirname, "/frontend/appointments/createAp.html"))
 })
+app.get('/salon/otp', (req,res)=>{
+    res.sendFile(path.join(__dirname, '/frontend/otp/sendOtp.html'))
+})
+
 //Socket set-up
 initSocket(server); // initializing initSocket
 
