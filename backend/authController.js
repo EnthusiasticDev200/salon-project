@@ -2,8 +2,9 @@ const db = require('./database')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const dotenv = require("dotenv")
-const {validationResult, cookie} = require("express-validator") // cookie or error?
+const {validationResult, cookie} = require("express-validator") 
 const { notifyStylist } = require('./socketHandler');
+const {sendOtpEmail} = require('../utils/mailer')
 
 
 
@@ -270,9 +271,10 @@ async function findStylistByEmail(email) {
 exports.changeAdminPassword = async(req, res)=>{
    try{
     const {email, newPassword} = req.body
-    const admin = await findAdminByEmail(email)
-    if(!admin){
-        return res.status(404).json({message:"Admin not found"}) 
+    const jwtOtpEmail = req.jwtOtp.email
+    //check if email and jwtEmail match
+    if(jwtOtpEmail !== email){
+        return res.status(401).json({message:'OTP verification required'})
     }
     //generate new password
     const salt = await bcrypt.genSalt(10)
@@ -282,10 +284,10 @@ exports.changeAdminPassword = async(req, res)=>{
         return res.status(401).json("Password already updated")
     }
     await db.query("UPDATE admins SET password_hash =? WHERE email = ?", [hashedPassword, email])
-    res.status(201).json({message:"Passwword updated succesfully"})
+    return res.status(201).json({message:"Passwword updated succesfully"})
    }catch(error){
     console.error("Error updating admin password", error)
-    res.status(500).json({message:"Error updating admin password", error:error.stack})
+    return res.status(500).json({message:"Error updating admin password", error:error.stack})
    }
 }
 // all about customer
@@ -754,5 +756,71 @@ exports.viewReviews = async (req, res)=>{
     }catch(error){
         console.log("Error fetching reviews", error)
         res.status(500).json({message:'Fetching reviews failed', error:error.stack})
+    }
+}
+
+exports.sendOtp = async (req, res)=>{
+    try{
+        const {email} = req.body
+        const [checkAdminEmail] = await db.query(`
+            SELECT email FROM admins WHERE email = ?`, [email])
+        const [checkCustomerEmail] = await db.query(`
+            SELECT email FROM customers WHERE email = ?`, [email])
+        const [checkStylistEmail] = await db.query(`
+            SELECT email FROM stylists WHERE email = ?`, [email])
+        if (
+                checkAdminEmail.length == 0 && 
+                checkCustomerEmail.length == 0 && 
+                checkStylistEmail.length == 0
+            )
+            {
+                return res.status(401).json({message : 'Invalid email'})
+            }
+        // create four digits otp
+        const otp = Math.floor(1000 + Math.random() * 9999).toString()
+        const otpPayload = {
+            email,
+            otp,
+            type : 'otp'
+        }
+        // implement JWT
+        const jwtOtp = jwt.sign(
+            otpPayload, 
+            process.env.JWT_SECRET,
+            {expiresIn : '2m'}
+        )
+        // store jwt contents in cookie
+        res.cookie('jwtOtp', jwtOtp,
+            {
+                httpOnly : true,
+                secure : false,
+                sameSite: 'Strict',
+                maxAge : 2*60*1000
+            }
+        )
+        await sendOtpEmail(email,otp)
+        return res.status(200).json({message:'OTP sent to your email'})
+    }catch(error){
+        console.log("Error occured while sending otp", error)
+        res.status(500).json({message: 'Sending otp error', error:error.stack})
+    }
+}
+
+exports.validateJwtOtp = async (req, res) =>{
+    try{
+        const { otp:enteredOtp} = req.body
+        //ensuring proper otp decoding
+        if(!req.jwtOtp || req.jwtOtp.type !== 'otp'){
+            return res.status(401).json({message: 'Not an OTP token'})
+        }
+        // checking if otp match
+        if(req.jwtOtp.otp !== enteredOtp)
+            {
+                return res.status(401).json({message: 'Invalid or expired OTP'})
+            } 
+        return res.status(200).json({message: 'OTP verification succesful'})
+    }catch(error){
+        console.log("Error occured validating otp", error)
+        res.status(500).json({message: 'OTP validation error', error:error.stack})
     }
 }
