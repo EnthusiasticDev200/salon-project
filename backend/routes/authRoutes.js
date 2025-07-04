@@ -1,5 +1,5 @@
 const express = require('express')
-const {authenticateJWT, requireSuperuser} = require('../../middlewares/auth')
+const {authenticateJWT, requireSuperuser, verifyOtp} = require('../../middlewares/auth')
 const router = express.Router()
 // const {check} = require("express-validator")
 const 
@@ -18,11 +18,11 @@ const
     customerTable, registerCustomer, logInCustomer, CustomerProfile,logoutCustomer,
     viewCustomers,getCustomerUsername,
     stylistTable, registerStylist,loginStylist, logoutStylist,viewStylists,
-    getStylistsUsername,
+    getStylistsUsername, stylistProfile,
     serviceTable,createServices,viewServices,
     appointmentTable, createAppointment, viewAppointments,
     reviewTable, createReview,viewReviews,
-    stylistProfile,
+    sendOtp, validateJwtOtp,
     
    
 
@@ -45,7 +45,7 @@ router.get('/reviews/table', authenticateJWT, requireSuperuser, reviewTable)
 router.post('/admin/register', validateAdmin, registerAdmin)
 router.post('/admin/login',logInAdmin)
 router.get("/admin/logout", logoutAdmin)
-router.put('/admin/updatepassword',changeAdminPassword)
+router.put('/admin/updatepassword',verifyOtp, changeAdminPassword)
 
 //customer's endpoints
 router.post('/customer/register', validateCustomer,registerCustomer)
@@ -75,4 +75,9 @@ router.get('/appointment/view', authenticateJWT, requireSuperuser,viewAppointmen
 //review endpoint
 router.post('/review/create', validateReview, authenticateJWT, createReview)
 router.get("/review/view", viewReviews)
+
+//otp enspoint
+router.post('/otp/send', sendOtp)
+router.post('/otp/verify', verifyOtp, validateJwtOtp)
+
 module.exports = router
