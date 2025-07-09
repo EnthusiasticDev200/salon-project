@@ -762,12 +762,15 @@ exports.viewReviews = async (req, res)=>{
 exports.sendOtp = async (req, res)=>{
     try{
         const {email} = req.body
-        const [checkAdminEmail] = await db.query(`
-            SELECT email FROM admins WHERE email = ?`, [email])
-        const [checkCustomerEmail] = await db.query(`
-            SELECT email FROM customers WHERE email = ?`, [email])
-        const [checkStylistEmail] = await db.query(`
-            SELECT email FROM stylists WHERE email = ?`, [email])
+        // hitting db in parallel with Promise
+        const [adminRes, customerRes, stylistRes] = await Promise.all([
+            db.query(`SELECT email FROM admins WHERE email = ?`, [email]),
+            db.query(`SELECT email FROM customers WHERE email = ?`, [email]),
+            db.query(`SELECT email FROM stylists WHERE email = ?`, [email])
+        ])
+        const [checkAdminEmail] = adminRes;
+        const [checkCustomerEmail] = customerRes;
+        const [checkStylistEmail] = stylistRes
         if (
                 checkAdminEmail.length == 0 && 
                 checkCustomerEmail.length == 0 && 
@@ -795,14 +798,17 @@ exports.sendOtp = async (req, res)=>{
                 httpOnly : true,
                 secure : false,
                 sameSite: 'Strict',
-                maxAge : 2*60*1000
+                maxAge : 2*60*1000 // 2mins duration
             }
         )
-        await sendOtpEmail(email,otp)
+        await sendOtpEmail(email, otp);
         return res.status(200).json({message:'OTP sent to your email'})
     }catch(error){
         console.log("Error occured while sending otp", error)
-        res.status(500).json({message: 'Sending otp error', error:error.stack})
+        return res.status(500).json({
+            message: 'Sending otp error. Please check internet connection', 
+            error:error.message
+        })
     }
 }
 
