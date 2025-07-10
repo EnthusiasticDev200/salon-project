@@ -35,7 +35,7 @@
         const verifySection = document.getElementById('verify-section')
         const otpForm = document.getElementById("otp")
 
-        otpForm.addEventListener('submit', async (e)=>{
+        otpForm.addEventListener('submit', async (e)=> {
             e.preventDefault()
             const email = document.getElementById("email").value
         
@@ -82,8 +82,7 @@
                 const data = await response.json()
                 if(response.ok){
                     console.log("Server response", data)
-                    alert(`${data.message}`)
-                    window.location.href= '/salon/admin/changepw'
+                    alert(`${data.message}. Goto your profile to update your password`)
                 }else{
                     console.log(`Error found: ${data.message}`)
                     alert(`Error : ${data.message}`)
