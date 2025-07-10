@@ -255,18 +255,7 @@ async function findAdminByEmail(email) {
         res.status(500).json({message:"Error finding admin", error:error.stack})
     }    
 }
-async function findStylistByEmail(email) {
-    try{
-        const [queryStylist] = await db.query("SELECT * FROM stylists WHERE email=?",[email])
-    if(queryStylist.length === 0){
-        return "Stylist not found"; //throw new Error("Stylist not found") don't throw error
-    }
-    return queryStylist[0]
-    }catch(error){
-        console.error("Error finding stylist", error)
-        res.status(500).json({message:"Error finding stylist", error:error.stack})
-    }
-}
+
 // forgot admin password login
 exports.changeAdminPassword = async(req, res)=>{
    try{
@@ -357,6 +346,33 @@ exports.logInCustomer =  async (req, res)=>{
         res.status(500).json({message: 'Log in error', err:err.stack})
     }
 }
+exports.changeCustomerPassword = async(req, res)=>{
+    try{
+     const {email, newPassword} = req.body
+     const jwtOtpEmail = req.jwtOtp.email
+     //check if email and jwtEmail match
+     if(jwtOtpEmail !== email){
+         return res.status(401).json({message:'OTP verification required'})
+     }
+     //generate new password
+     const salt = await bcrypt.genSalt(10)
+     const hashedPassword = await bcrypt.hash(newPassword, salt)
+     const [checkIfPasswordUpdated] = await db.query("SELECT * FROM customers WHERE password_hash=?", [hashedPassword])
+     if(checkIfPasswordUpdated.length > 0){
+         return res.status(401).json("Password already updated")
+     }
+     await db.query(`
+        UPDATE customers 
+        SET password_hash =? 
+        WHERE email = ?`, 
+        [hashedPassword, email])
+     return res.status(201).json({message:"Passwword updated succesfully"})
+    }catch(error){
+     console.error("Error updating customer password", error)
+     return res.status(500).json({message:"Error updating customer password", error:error.stack})
+    }
+ }
+ 
 exports.getCustomerUsername = async (req, res)=>{
     try{
         const customerUsername = req.username
@@ -511,6 +527,33 @@ exports.loginStylist = async (req, res)=>{
         return res.status(500).json({message:"Error loggig in stylist", error:error.stack})
     }
 }
+exports.changeStylistPassword = async(req, res)=>{
+    try{
+     const {email, newPassword} = req.body
+     const jwtOtpEmail = req.jwtOtp.email
+     //check if email and jwtEmail match
+     if(jwtOtpEmail !== email){
+         return res.status(401).json({message:'OTP verification required'})
+     }
+     //generate new password
+     const salt = await bcrypt.genSalt(10)
+     const hashedPassword = await bcrypt.hash(newPassword, salt)
+     const [checkIfPasswordUpdated] = await db.query("SELECT * FROM stylists WHERE password_hash=?", [hashedPassword])
+     if(checkIfPasswordUpdated.length > 0){
+         return res.status(401).json("Password already updated")
+     }
+     await db.query(`
+        UPDATE stylists 
+        SET password_hash =? 
+        WHERE email = ?`, 
+        [hashedPassword, email])
+     return res.status(201).json({message:"Passwword updated succesfully"})
+    }catch(error){
+     console.error("Error updating stylist password", error)
+     return res.status(500).json({message:"Error updating stylist password", error:error.stack})
+    }
+ }
+ 
 exports.getStylistsUsername = async (req, res)=>{
     try{
         const stylistUsername = req.stylistUsername
@@ -798,7 +841,7 @@ exports.sendOtp = async (req, res)=>{
                 httpOnly : true,
                 secure : false,
                 sameSite: 'Strict',
-                maxAge : 2*60*1000 // 2mins duration
+                maxAge : 5*60*1000 // 5mins duration
             }
         )
         await sendOtpEmail(email, otp);
