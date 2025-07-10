@@ -16,15 +16,13 @@ const
 {
     adminTable,registerAdmin, logInAdmin,logoutAdmin,changeAdminPassword,
     customerTable, registerCustomer, logInCustomer, CustomerProfile,logoutCustomer,
-    viewCustomers,getCustomerUsername,
+    viewCustomers,getCustomerUsername, changeCustomerPassword,
     stylistTable, registerStylist,loginStylist, logoutStylist,viewStylists,
-    getStylistsUsername, stylistProfile,
+    getStylistsUsername, stylistProfile, changeStylistPassword,
     serviceTable,createServices,viewServices,
     appointmentTable, createAppointment, viewAppointments,
     reviewTable, createReview,viewReviews,
     sendOtp, validateJwtOtp,
-    
-   
 
     
 } = require('../authController')
@@ -50,6 +48,8 @@ router.put('/admin/updatepassword',verifyOtp, changeAdminPassword)
 //customer's endpoints
 router.post('/customer/register', validateCustomer,registerCustomer)
 router.post('/customer/login',logInCustomer)
+router.put('/customer/updatepassword',verifyOtp, changeCustomerPassword)
+
 //customer's protected routes
 router.get('/customer/me', authenticateJWT, getCustomerUsername)
 router.get("/customer/profile", authenticateJWT, CustomerProfile) 
@@ -63,6 +63,7 @@ router.get('/service/view',viewServices)
 // stylist endpoint 
 router.post('/stylist/register', validateStylist,registerStylist)
 router.post('/stylist/login',loginStylist)
+router.put('/stylist/updatepassword',verifyOtp, changeStylistPassword)
 router.get("/stylist/profile", authenticateJWT, stylistProfile)
 router.get('/stylist/me', authenticateJWT,getStylistsUsername)
 router.get('/stylist/logout', authenticateJWT,logoutStylist)
