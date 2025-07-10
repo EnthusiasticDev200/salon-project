@@ -15,7 +15,7 @@ const sendOtpEmail = async (toEmail, otp) => {
     to: toEmail,
     subject: "Your OTP for Password Reset",
     html: `<h3>Hello from KhleanCutz!</h3><p>Your OTP is: <strong>${otp}</strong>. 
-        It expires in 2 minutes.</p>`,
+        It expires in 5 minutes.</p>`,
   };
 
   await transporter.sendMail(mailOptions);
