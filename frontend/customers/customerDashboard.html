@@ -24,77 +24,92 @@
         <th>Hairstyle</th>
         <th>Date</th>
         <th>Time</th>
-        <th>Stylist Response </th>
+        <th>Status</th>
+        <!--<th>Stylist Response </th>-->
       </tr>
     </thead>
     <tbody id="appointmentsBody"></tbody>
-  </table>
+  </table> <br>
 
+  <div id="UpdateInfo">
+      <input type="button" value="Update My Profile">
+  </div>
   <script>
-    let socket; // makes socket global
-    fetch("http://localhost:3100/auth/customer/me", {
-      method: 'GET',
-      credentials: "include",
-    })
-    .then(res => {
-      if (!res.ok) throw new Error("Unauthorized");
-      return res.json(); 
-    })
-    .then(data => {
-      const customerUsername = data.username;
-  
-      document.getElementById("status").textContent = "Connected as " + customerUsername;
-  
-      socket = io("http://localhost:3100", {
-          reconnection: false
-      });
-  
-      socket.on("connect", () => {
-        console.log("Socket connected:", socket.id);
-        socket.emit("joinCustomerRoom", customerUsername);
-        console.log("Joining customer room:", customerUsername);
-      });
+    let socket; //making socket global
+    async function customerDash(){
+      try{
+          const response = await fetch("http://localhost:3100/auth/customer/me",{
+            method : 'GET',
+            credentials : 'include'
+          })
+
+          if(!response.ok) throw new Error("Unauthorized");
+          const data = await response.json()
+          const customerUsername = data.username;
+          document.getElementById("status").textContent = "Connected as " + customerUsername;
+          
+          //get customerappontment
+          const customerAp = await fetch("http://localhost:3100/auth/customer/appointment",
+            {
+              method : "GET",
+              credentials : "include"
+            })
+        
+          const customerAppointment = await customerAp.json()
+          //Ensure frontend handles non array with Array.isArray as forEach expects an array 
+          const appoinments = Array.isArray(customerAppointment) ? customerAppointment : [];
+          appoinments.forEach(addAppointmentRow);
+          
+          //conncetion socket
+          socket = io("http://localhost:3100", {
+            reconnection: false
+          });
       
-
-      socket.on("appointmentStatusUpdated", (appointmentId, status)=>{
-        console.log(`Stylist responsed to appointment. New status: ${status}`);
-        addAppointmentRow(appointment);
-        })
-    //   socket.on("appointmentNotification", (appointment) => {
-    //     console.log("Appointment received", appointment);
-    //     addAppointmentRow(appointment);
-    //   });
-  
-      function addAppointmentRow(appointment) {
-        if (!appointment || !appointment.appointmentId) {
-        console.error("Invalid appointment data received:", appointment);
-        return;
-        }
-
-        console.log("Received appointment:", appointment);
-        const tbody = document.getElementById("appointmentsBody");
-        const row = document.createElement("tr");
-        row.setAttribute("data-id", appointment.appointmentId);
-        // Ensure values are safely escaped and strings
-        const apptId = String(appointment.appointmentId);
-        const custUser = String(appointment.customerUsername); 
-  
-        row.innerHTML = `
-          <td>${appointment.stylistUesrname}</td>
-          <td>${appointment.hairStyle}</td>
-          <td>${appointment.date}</td>
-          <td>${appointment.time}</td>
-          <td class="status">${appointment.status}</td>
-        `;
-  
-        tbody.appendChild(row);
-      }
-    })
-    .catch(error => {
-      console.error("Failed to connect:", error);
-      document.getElementById("status").textContent = "Failed to connect";
-    });
+          socket.on('connect', ()=>{
+            console.log("Socket connected:", socket.id);
+            
+            // customer joins room
+            socket.emit("joinCustomerRoom", customerUsername);
+            console.log("Joining customer room:", customerUsername);
+            
+          })      
+            //customer books new appointment
+            socket.on("newCustomerAppointment", (appointment) => {
+              console.log("New appointmnet successfully booked: ", appointment)
+              addAppointmentRow(appointment);
+              });
     
+      
+      }catch(error){
+        console.log('Error getting customer name from db')
+        alert(`${error.message}`)
+      }
+  }
+  customerDash()
+  function addAppointmentRow(appointment) {
+              if (!appointment || !appointment.appointmentId) {
+              console.error("Invalid appointment data received:", appointment);
+              return;
+              }
+
+              console.log("Received appointment:", appointment);
+              const tbody = document.getElementById("appointmentsBody");
+            const row = document.createElement("tr");
+            row.setAttribute("data-id", appointment.appointmentId);
+            // Ensure values are safely escaped and strings
+            const apptId = String(appointment.appointmentId);
+            const custUser = String(appointment.customerUsername); 
+  
+            row.innerHTML = `
+              <td>${appointment.stylistUsername}</td>
+              <td>${appointment.hairStyle}</td>
+              <td>${appointment.date}</td>
+              <td>${appointment.time}</td>
+              <td class="status">${appointment.status}</td>
+              `;
+  
+            tbody.appendChild(row);
+            }
   </script>
 
 </body>
