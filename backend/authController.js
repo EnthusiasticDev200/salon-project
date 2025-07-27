@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const dotenv = require("dotenv")
 const {validationResult, cookie} = require("express-validator") 
-const { notifyStylist } = require('./socketHandler');
+const { notifyStylist, notifyCustomer } = require('./socketHandler');
 const {sendOtpEmail} = require('../utils/mailer')
 
 
@@ -391,7 +391,7 @@ exports.getCustomerUsername = async (req, res)=>{
     }
 }
 
-exports.CustomerProfile = async (req, res)=>{
+exports.CustomerAppointment = async (req, res)=>{
     const userId = req.userId 
     if(!req.userId){
         return res.status(403).json({message:"Access denied. Kindly register"})
@@ -415,12 +415,12 @@ exports.CustomerProfile = async (req, res)=>{
                 WHERE customer_id = ? `,
             [userId])
         if(checkMyappointment.length === 0){
-           return res.status(401).json({message: "You have not booked any appointment"})
+           return res.status(401).json(checkMyappointment)
         }
-        res.status(200).send(checkMyappointment)
+        return res.status(200).json(checkMyappointment)
     }catch(err){
         console.error("Error fetching customer profile", err)
-        res.status(500).json({message: 'Get profile error', err:err.stack})
+        return res.status(500).json({message: 'Get profile error', err:err.stack})
     }
 }
 exports.logoutCustomer = async(req, res)=>{
@@ -571,7 +571,7 @@ exports.getStylistsUsername = async (req, res)=>{
         return res.status(500).json({message:"Failed fetching stylist username", error:error.stack})
     }
 }
-exports.stylistProfile = async (req, res)=>{
+exports.stylistAppointment = async (req, res)=>{
     try{
         const stylistId = req.stylistId
         const [checkStylist] = await db.query(`
@@ -630,6 +630,7 @@ exports.viewStylists = async (req, res)=>{
 exports.createAppointment = async (req, res) =>{
     
     try{
+        const customerUsername = req.username
         const checkAppointmentInput = await checkValidationResult(req)
         if(checkAppointmentInput){
             return res.status(401).json({message:"Please fix error", errors:checkAppointmentInput })
@@ -638,8 +639,8 @@ exports.createAppointment = async (req, res) =>{
 
         const userId = req.userId
         const [queryCustomer] = await db.query('SELECT * FROM customers WHERE customer_id = ?', [userId])
-        const value = (stylistUsername)
-        const [queryStylist] = await db.query("SELECT stylist_id FROM stylists WHERE username = ?", value)
+        const stylisUsername = stylistUsername
+        const [queryStylist] = await db.query("SELECT stylist_id FROM stylists WHERE username = ?", [stylisUsername])
         if(queryStylist.length === 0){
             return res.status(401).json({message:"Invalid stylist username"})
         }
@@ -653,7 +654,7 @@ exports.createAppointment = async (req, res) =>{
             return res.status(401).json({message:"We don't offer this service, pase check the service menu."})
         }
         //check existing Ap for data integrity
-        const apCheckValue = [queryCustomer[0].customer_id]
+        const apCheckValue = queryCustomer[0].customer_id
         const [checkAppointment] = await db.query(`
             SELECT * 
                 FROM 
@@ -661,10 +662,10 @@ exports.createAppointment = async (req, res) =>{
                 WHERE customer_id =? 
                 AND appointment_date BETWEEN CURDATE() 
                 AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)`,
-            apCheckValue
+            [apCheckValue]
         )
         if(checkAppointment.length > 0){
-            console.log("appointmentDetails", checkAppointment)
+            console.log("existing Appoinment", checkAppointment)
             return res.status(400).json({message:"Appointment already booked for the week"});
         }
         const [reviewAppointment] = await db.query(`
@@ -702,6 +703,7 @@ exports.createAppointment = async (req, res) =>{
         const appointmentData = 
         {
             appointmentId : insertResult.insertId,
+            stylistUsername : stylisUsername,
             customerName : queryCustomer[0].first_name + ' ' + queryCustomer[0].last_name,
             customerUsername : queryCustomer[0].username,
             hairStyle : hairStyle,
@@ -710,6 +712,7 @@ exports.createAppointment = async (req, res) =>{
             status : 'pending'
         }
         notifyStylist(stylistUsername, appointmentData)
+        notifyCustomer(customerUsername, appointmentData)
         return res.status(201).json({message: `Appointment booked and stylist notified`})
     }catch(err){
         console.error("Appointment booking failed", err)
