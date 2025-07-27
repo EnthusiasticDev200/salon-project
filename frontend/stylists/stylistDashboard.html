@@ -34,6 +34,7 @@
 
   <script>
     let socket; // makes socket global
+
     async function stylistDash(){
       try{
         const response = await fetch("http://localhost:3100/auth/stylist/me", 
@@ -47,7 +48,7 @@
 
         document.getElementById("status").textContent = "Connected as " + stylistUsername;
         
-        const appointmentRes = await fetch("http://localhost:3100/auth/stylist/profile", 
+        const appointmentRes = await fetch("http://localhost:3100/auth/stylist/appointment", 
         {
           method : 'GET',
           credentials : 'include'  
@@ -71,7 +72,14 @@
           addAppointmentRow(appointment);
         });
   
-        function addAppointmentRow(appointment) {
+        
+      }catch(error){
+        console.log("Error displaying stylist dashboard", error)
+      }
+    }
+    stylistDash();
+    
+    function addAppointmentRow(appointment) {
           if (!appointment || !appointment.appointmentId) {
             console.error("Invalid appointment data received:", appointment);
           return;
@@ -100,12 +108,7 @@
   
         tbody.appendChild(row);
       }
-      }catch(error){
-        console.log("Error displaying stylist dashboard", error)
-      }
-    }
-    stylistDash();
-    
+
     function respond(appointmentId, status, customerUsername, btn) {
         console.log("Respond clicked with:", { appointmentId, status, customerUsername });
         if (!socket) {
