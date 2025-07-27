@@ -15,14 +15,18 @@ const
 const
 {
     adminTable,registerAdmin, logInAdmin,logoutAdmin,changeAdminPassword,
+
     customerTable, registerCustomer, logInCustomer, CustomerProfile,logoutCustomer,
-    viewCustomers,getCustomerUsername, changeCustomerPassword,
+    viewCustomers,getCustomerUsername, changeCustomerPassword,CustomerAppointment,
+
     stylistTable, registerStylist,loginStylist, logoutStylist,viewStylists,
-    getStylistsUsername, stylistProfile, changeStylistPassword,
+    getStylistsUsername, stylistProfile, changeStylistPassword, stylistAppointment,
+
     serviceTable,createServices,viewServices,
     appointmentTable, createAppointment, viewAppointments,
     reviewTable, createReview,viewReviews,
     sendOtp, validateJwtOtp,
+    
 
     
 } = require('../authController')
@@ -52,7 +56,8 @@ router.put('/customer/updatepassword',verifyOtp, changeCustomerPassword)
 
 //customer's protected routes
 router.get('/customer/me', authenticateJWT, getCustomerUsername)
-router.get("/customer/profile", authenticateJWT, CustomerProfile) 
+//router.put('/customer/profile', authenticateJWT, CustomerProfile)
+router.get("/customer/appointment", authenticateJWT, CustomerAppointment) //changed cusProfile to cusApp
 router.get('/customer/profile/logout', authenticateJWT,logoutCustomer)
 router.get('/customer/view', authenticateJWT,requireSuperuser, viewCustomers)
 
@@ -64,7 +69,7 @@ router.get('/service/view',viewServices)
 router.post('/stylist/register', validateStylist,registerStylist)
 router.post('/stylist/login',loginStylist)
 router.put('/stylist/updatepassword',verifyOtp, changeStylistPassword)
-router.get("/stylist/profile", authenticateJWT, stylistProfile)
+router.get("/stylist/appointment", authenticateJWT, stylistAppointment)
 router.get('/stylist/me', authenticateJWT,getStylistsUsername)
 router.get('/stylist/logout', authenticateJWT,logoutStylist)
 router.get('/stylist/view', authenticateJWT, viewStylists)
