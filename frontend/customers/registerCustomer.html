@@ -57,14 +57,17 @@
 
             const data = await response.json()
 
-            if(response.ok){
-                console.log("Server response", data)
-                alert("Customer successfully registered")
-                window.location.reload()
-            }else{
-                alert(`Error:${data.message} `)
+            if (response.ok) {
+                console.log("Server response", data);
+                alert("Customer successfully registered");
+                window.location.reload();
+            } else {
+                if (data.validationErrors && Array.isArray(data.validationErrors)) {
+                    alert(data.validationErrors.join("\n")); // Show all error messages line by line
+                } else {
+                    alert(`Error: ${data.message}`);
+                }
             }
-
         }catch(error){
             console.log("Error registering customer", error.message)
         }
