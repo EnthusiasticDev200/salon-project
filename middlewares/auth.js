@@ -6,33 +6,34 @@ const authenticateJWT = (req, res, next)=>{
     const adminToken = req.cookies.admin_token
     const customerToken = req.cookies.customer_token
     const stylistToken = req.cookies.stylist_token
-    
-    let decoded;
 
     if(adminToken){
        try{
-            decoded = jwt.verify(adminToken, process.env.JWT_SECRET)
+            const decoded = jwt.verify(adminToken, process.env.JWT_SECRET)
             req.adminId = decoded.adminId || null;
             req.adminUsername = decoded.adminUsername || null
             req.role = decoded.role || null
+            return next() 
        }catch(error){
             console.warn("Invalid token")
        }
     }
     if(customerToken){
         try{
-            decoded = jwt.verify(customerToken, process.env.JWT_SECRET)
+            const decoded = jwt.verify(customerToken, process.env.JWT_SECRET)
             req.userId = decoded.userId || null;
             req.username = decoded.username || null;
+            return next() 
         }catch(error){
             console.warn("Invalid token")
         }
     }
     if(stylistToken){
         try{
-            decoded = jwt.verify(stylistToken, process.env.JWT_SECRET)
+            const decoded = jwt.verify(stylistToken, process.env.JWT_SECRET)
             req.stylistId = decoded.stylistId || null;
             req.stylistUsername = decoded.stylistUsername || null;
+            return next() 
         }catch(error){
             console.warn("Invalid token")
         }
@@ -50,13 +51,14 @@ const requireSuperuser = async(req, res, next)=>{
 
     next();
 }
-
+const customerOnly = async (req, res, next)=>{
+    if (!req.userId) return res.status(403).json({message:" Sorry! Strictly for customers"})
+    next()
+}
 const verifyOtp = async (req, res,next) =>{
     try{
         const jwtOtp = req.cookies.jwtOtp
-        console.log('jwtOtp from midWARE', jwtOtp)
         if(!jwtOtp) return res.status(401).json({message: 'No OTP token fond'})
-
         const decoded = jwt.verify(jwtOtp, process.env.JWT_SECRET)
         req.jwtOtp = decoded;
         next() 
@@ -68,4 +70,7 @@ const verifyOtp = async (req, res,next) =>{
 }
 
 
-module.exports = {authenticateJWT ,requireSuperuser, verifyOtp} //using named export
+module.exports = {
+    authenticateJWT ,requireSuperuser, verifyOtp,
+    customerOnly
+    } //using named export
