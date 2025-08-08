@@ -26,9 +26,7 @@
         <label for="apTime">Appointment Time</label>
         <input type="time" id="apTime" name="apTime" required>
 
-        <!-- <label for="status">Status</label>
-        <input type="text" id="status" name="status" required> -->
-
+    
         <button type="submit">Book Appointment</button>
     </form>
     
@@ -39,8 +37,6 @@
         const hairStyle = document.getElementById("hairStyle").value
         const appointmentDate = document.getElementById("apDate").value
         const appointmentTime = document.getElementById("apTime").value
-        //const status = document.getElementById("status").value
-        
         try{
             const body = {stylistUsername, hairStyle, appointmentDate, appointmentTime, status}
             const response = await fetch('/auth/appointment/create', {
@@ -53,7 +49,7 @@
             const data = await response.json()
             if(response.ok){
                 console.log("Server response", data)
-                alert(`${data.message}`) 
+                alert(`${data.message}`)       
             }else{
                 console.log(`Error encountered: ${data.message}`)
                 alert(`Error: ${data.message}`) 
@@ -61,12 +57,7 @@
         }catch (err) {
             console.log(`Error booking appointment: ${err.message}`);
             alert(`Error booking appointment: ${err.message}`);
-        }
-
-
-
-
-        })
+        }})
     </script>
 </body>
 </html>
