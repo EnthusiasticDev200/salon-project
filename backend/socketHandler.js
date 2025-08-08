@@ -6,7 +6,7 @@ function initSocket(server){
     const {Server} = require('socket.io')
     io = new Server(server, {
         cors : {
-            origin: "http://localhost:5173",
+            origin: "http://localhost:3100", //change to Vite later 5173
             methods: ["GET", "POST"],
             credentials: true
         }
@@ -48,10 +48,12 @@ function initSocket(server){
                 );
                 console.log(`Appointment ${appointmentId} updated to status '${status}'`);
                 // (Optional) Notify the customer
-                io.to(`customer_${customerUsername}`).emit("appointmentStatusUpdated", {
-                    appointmentId,
-                    status
-                });
+                console.log(`Emmiting appointment status to ${customerUsername}`);
+                io.to(customerUsername).emit("appointmentStatusUpdated", 
+                    {
+                        appointmentId,
+                        status
+                    }) 
             }catch (err) {
                 console.error("Error updating appointment status:", err.message);
                 }
@@ -70,4 +72,15 @@ function notifyStylist(stylistUsername, appointmentData){
         console.error('Socket.IO not initialised')
     }
 }
-module.exports ={ notifyStylist, initSocket}
+// notify customer of new appointment
+function notifyCustomer(customerUsername, appointmentData){
+    if(io){
+        //emitting to new appointment to frontend
+        io.to(customerUsername).emit("newCustomerAppointment", appointmentData)
+        console.log(`${customerUsername}, your new appointment has been booked successfully`)
+    }
+    else{
+        console.error('Socket.IO not initialised')
+    }
+}
+module.exports ={ notifyStylist, notifyCustomer, initSocket,}
