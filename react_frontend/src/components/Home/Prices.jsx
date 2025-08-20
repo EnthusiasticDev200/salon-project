@@ -14,18 +14,29 @@ const Prices = () => {
   const [services, setServices] = useState([])
   const { getServices } = useContext(AdminAuthContext)
 
-   useEffect(() => {
+  useEffect(() => {
     const loadServices = async () => {
       try {
-        const response = await getServices()
-        setServices(response.data)
-      } catch (error) {
-        console.log(error)
-      }
-    }
+        const response = await getServices();
+        const data = response.data;
   
-    loadServices()
-  }, [])
+        // Fix: Handle both array and object response
+        if (Array.isArray(data)) {
+          setServices(data);
+        } else if (Array.isArray(data.services)) {
+          setServices(data.services);
+        } else {
+          console.error("Unexpected response format:", data);
+          setServices([]); // fallback to empty array
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+  
+    loadServices();
+  }, []);
+  
 
   const filteredServices = services.map((service, index) => ({
     title: service.hair_style, 

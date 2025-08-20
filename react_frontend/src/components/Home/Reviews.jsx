@@ -11,20 +11,29 @@ import 'swiper/css/grid';
 
 const Reviews = () => {
   const [reviews, setReviews] = useState([])
-  useEffect(() => {
-    const loadReviews = async () => {
-      try {
-        const response = await viewReviews()
-        console.log(response.data);
-        setReviews(response.data)
-      } catch (error) {
-        console.log(error)
-      }
-    }
-
-    loadReviews()
-  }, [])
   
+useEffect(() => {
+  const loadReviews = async () => {
+    try {
+      const response = await getReviews(); // from context or API file
+      const data = response.data;
+
+      if (Array.isArray(data)) {
+        setReviews(data);
+      } else if (Array.isArray(data.reviews)) {
+        setReviews(data.reviews);
+      } else {
+        console.error("Unexpected response format:", data);
+        setReviews([]);
+      }
+    } catch (error) {
+      console.error("Error loading reviews:", error);
+      setReviews([]);
+    }
+  };
+
+  loadReviews();
+}, []);  
 
   return (
     <div className='py-12 px-6 md:px-24' id='prices'>
