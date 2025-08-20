@@ -63,9 +63,11 @@ const validateCustomer =
 const validateLoginAndChangePassword = 
 [
     check("email", "Must be a valid email").notEmpty().isEmail(),
-    check("password", "Must contain letters and numbers and 6 or more characters long")
-        .matches(/^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d]+$/)
-        .isLength({min:6})
+   check("newPassword")
+    .notEmpty().withMessage("Password is required")
+    .isLength({ min: 6 }).withMessage("Password must be at least 6 characters long")
+    .matches(/^(?=.*[a-zA-Z])(?=.*\d).*$/)
+    .withMessage("Password must contain at least one letter and one number")
 ]
 
 const validateAdmin = 
@@ -97,10 +99,11 @@ const validateEmail =
 
 const validateOtp = 
 [
-    check('verify-otp', 'Invalid. Enter the correct OTP')
-    .notEmpty()
-    .isLength({ min: 4, max: 4 }) // must be 4 digits
+    check('enteredOtp')
+    .notEmpty().withMessage('OTP is required')
     .matches(/^\d{4}$/).withMessage("Wrong OTP") // ensures digits (0-9) no symbols or alpha
+    .isLength({min:4, max:4})
+    .withMessage("Beyond expected number required") 
 ]
 
 const validateService = 

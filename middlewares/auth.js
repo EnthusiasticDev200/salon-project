@@ -7,43 +7,40 @@ const authenticateJWT = (req, res, next)=>{
     const customerToken = req.cookies.customer_token
     const stylistToken = req.cookies.stylist_token
 
+    let decoded;
     if(adminToken){
        try{
-            const decoded = jwt.verify(adminToken, process.env.JWT_SECRET)
+            decoded = jwt.verify(adminToken, process.env.JWT_SECRET)
             req.adminId = decoded.adminId || null;
             req.adminUsername = decoded.adminUsername || null
-            req.role = decoded.role || null
-            return next() 
+            req.role = decoded.role || null 
        }catch(error){
             console.warn("Invalid token")
        }
     }
     if(customerToken){
         try{
-            const decoded = jwt.verify(customerToken, process.env.JWT_SECRET)
+            decoded = jwt.verify(customerToken, process.env.JWT_SECRET)
             req.userId = decoded.userId || null;
-            req.username = decoded.username || null;
-            return next() 
+            req.username = decoded.username || null; 
         }catch(error){
             console.warn("Invalid token")
         }
     }
     if(stylistToken){
         try{
-            const decoded = jwt.verify(stylistToken, process.env.JWT_SECRET)
+            decoded = jwt.verify(stylistToken, process.env.JWT_SECRET)
             req.stylistId = decoded.stylistId || null;
-            req.stylistUsername = decoded.stylistUsername || null;
-            return next() 
+            req.stylistUsername = decoded.stylistUsername || null; 
         }catch(error){
             console.warn("Invalid token")
         }
     }
 
-    // if not user, stylist and admin
     if (!req.userId && !req.stylistId && !req.adminId) {
         return res.status(401).json({ message: 'Access denied. Unauthorized!' });
     }
-    next();  
+    next()
 }
 const requireSuperuser = async(req, res, next)=>{
    
