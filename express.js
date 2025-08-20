@@ -1,76 +1,77 @@
 require('dotenv').config();
+
 const express = require('express')
 const cors = require("cors")
 const cookieParser = require('cookie-parser')
-const authRoutes = require('./backend/routes/authRoutes')
+const helmet = require('helmet')
+
 const http = require('http')
-const path = require('path')
+
+const authRoutes = require('./backend/routes/authRoutes')
+const {initSocket} = require('./backend/socketHandler')
+const logger = require("./utils/logger")
+
 const app = express()
 const server = http.createServer(app)
-const {initSocket} = require('./backend/socketHandler')
 
 //cors set-up
 app.use(cors({
-    origin : "http://localhost:3100", //change to Vite later 5173
+    origin : "http://localhost:3100", //change to 5173 for vite
     credentials : true
 }))
 
 //middleware
+if (process.env.NODE_ENV === 'production') {
+  // Strict helmet settings for live environment
+  app.use(helmet());
+} else {
+  // Relaxed CSP for local development
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        useDefaults: true,
+        directives: {
+          "script-src": ["'self'", "'unsafe-inline'"],
+        },
+      },
+    })
+  );
+}
+
 app.use(express.json())
 app.use(cookieParser());
 
-//troutes
-app.use('/auth',authRoutes) //all endpointmust start with auth
+//routes
+app.use('/auth',authRoutes) 
 
-app.get('/salon/admin/login', (req, res)=>{
-    res.sendFile(path.join(__dirname, '/frontend/admins/loginAdmin.html'))
-})
-app.get('/salon/admin/changepw', (req,res)=>{
-    res.sendFile(path.join(__dirname, '/frontend/admins/changeAdminPassword.html'))
-})
-app.get('/salon/customer/login', (req, res)=>{
-    res.sendFile(path.join(__dirname, '/frontend/customers/loginCustomer.html'))
-})
-app.get('/salon/customer/changepsw', (req, res)=>{
-    res.sendFile(path.join(__dirname, '/frontend/customers/changeCustomerPassword.html'))
-})
-app.get('/salon/customer/dashboard', (req, res)=>{
-    res.sendFile(path.join(__dirname,'/frontend/customers/customerDashboard.html'))
-})
-app.get('/salon/stylist/login', (req, res)=>{
-    res.sendFile(path.join(__dirname, '/frontend/stylists/loginStylist.html'))
-})
-app.get('/salon/stylist/changepsw', (req, res)=>{
-    res.sendFile(path.join(__dirname, '/frontend/stylists/changeStylistPassword.html'))
-})
-app.get('/salon/stylist/dashboard', (req, res)=>{
-    res.sendFile(path.join(__dirname,'/frontend/stylists/stylistDashboard.html'))
-})
-
-app.get('/salon/appointment', (req, res)=>{
-    res.sendFile(path.join(__dirname, "/frontend/appointments/createAp.html"))
-})
-app.get('/salon/otp', (req,res)=>{
-    res.sendFile(path.join(__dirname, '/frontend/otp/sendOtp.html'))
-})
 //landing page route
 app.get('/', (req,res)=>{
     res.send("Welcome to KhleanCutz Salon")
 })
 
 // catch unavailable route
-app.use('',(req, res, next )=>{
+app.use('',(req, res)=>{
     res.status(401).json({message:'Route not found'})
 })
     
 //Socket set-up
-initSocket(server); // initializing initSocket
+initSocket(server); 
 
 
-
-const port = 3100
-server.listen(port, ()=>{
-    console.log(`Server is running on http://localhost:${port}`)
+const PORT = process.env.APP_PORT
+server.listen(PORT, ()=>{
+    logger.info(`Server started on http://localhost:${PORT}`);
+    console.log(`Server is running on http://localhost:${PORT}`)
+ 
+process.on('uncaughtException', (err)=>{
+    logger.error(`Uncaught Exception: ${err.message}`, { stack: err.stack });
+    process.exit(1); // stop app to avoid broken state
+    })
+//catch uncaught promise
+process.on('unhandledRejection', (err) => {
+    logger.error(`Unhandled Rejection: ${err.message || err}`);
+    process.exit(1);
+    });
 })
 
 

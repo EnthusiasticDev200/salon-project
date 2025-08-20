@@ -7,9 +7,7 @@ const { notifyStylist, notifyCustomer } = require('./socketHandler');
 const {sendOtpEmail} = require('../utils/mailer')
 
 dotenv.config()
-// creating registration for admin, customer, stylist, service and appointment
 
-//all about admin
 async function checkValidationResult(req){
     const validationErrors = validationResult(req)
     console.log("validationErrorfunc: ", validationErrors)
@@ -21,7 +19,6 @@ async function checkValidationResult(req){
 exports.registerAdmin = async (req, res) =>{
     try{
         const checkAdminInput = await checkValidationResult(req)
-        console.log("checRegkAdminInput: ", checkAdminInput)
         if(checkAdminInput){
             return res.status(400).json(
                 { message: 'Please correct input errors', 
@@ -37,9 +34,11 @@ exports.registerAdmin = async (req, res) =>{
         (`INSERT INTO admins(username, email, phone_number, role, password_hash) VALUE(?,?,?,?,?)`,
         [username, email, phoneNumber, role, hashedPassword])
         return res.status(201).json({message:"Admin successfully created"});
-    }catch(error){
-        console.error("error found: ", error)
-        return res.status(500).json({message:'Error registering admin', error})
+    }catch(err){
+        console.error("Registeration error: ", err)
+        return res.status(500).json({
+            message:'Error registering admin', 
+            err:err.stack})
     }
 }
 exports.logInAdmin = async (req, res)=>{
@@ -51,7 +50,6 @@ exports.logInAdmin = async (req, res)=>{
                 validationErrors: checkAdminLoginInput
             })
         const {email, password} = req.body
-        console.log('admin req body: ', req.body)
         const [checkAdmin] = await db.query("SELECT * FROM admins WHERE email = ?", [email])
         if(checkAdmin.length === 0){
             return res.status(403).json({message:"Not an admin"})
@@ -67,7 +65,6 @@ exports.logInAdmin = async (req, res)=>{
                 adminUsername: adminUser.username,
                 role: adminUser.role,
             }
-        console.log('admin payload: ', payload)
         const adminToken = jwt.sign(
             payload, 
             process.env.JWT_SECRET, 
@@ -83,25 +80,29 @@ exports.logInAdmin = async (req, res)=>{
                 maxAge : 60*60*1000
             })
         return res.status(200).json({message:`Welcome ${checkAdmin[0].username}`})
-    }catch(error){
-        console.error("Error logging in admin", error)
-        return res.status(500).json({message:'Error loggin in admin', error:error.stack})
-    }
-}
-exports.logoutAdmin = async(req, res)=>{
-    try{
-        const username = req.adminUsername
-        console.log('admin username: ', username)
-        res.clearCookie('admin_token')
-        return res.status(200).json({message:`Logout successful. Bye ${username}`}) // saying undefined
-    }catch(error){
-        console.error("Error loggin out admin", error)
-        return res.status(500).json({message:"Error login admin out", error:error.stack})
+    }catch(err){
+        console.error("Error logging in admin", err)
+        return res.status(500).json({
+            message:'Error loggin in admin', 
+            err:err.stack})
     }
 }
 
-// forgot admin password login
+exports.logoutAdmin = async(req, res)=>{
+    try{
+        const username = req.adminUsername
+        res.clearCookie('admin_token')
+        return res.status(200).json({message:`Logout successful. Bye ${username}`}) 
+    }catch(err){
+        console.error("Error loggin out admin", err)
+        return res.status(500).json({
+            message:"Error login admin out", 
+            err:err.stack})
+    }
+}
+
 exports.changeAdminPassword = async(req, res)=>{
+    console.log('Admin input: ', req.body)
    try{
         const checkAdminPWInput = await checkValidationResult(req)
         if(checkAdminPWInput) return res.status(400).json({
@@ -123,9 +124,11 @@ exports.changeAdminPassword = async(req, res)=>{
         }
         await db.query("UPDATE admins SET password_hash =? WHERE email = ?", [hashedPassword, email])
         return res.status(201).json({message:"Passwword updated succesfully"})
-    }catch(error){
-        console.error("Error updating admin password", error)
-        return res.status(500).json({message:"Error updating admin password", error:error.stack})
+    }catch(err){
+        console.error("Error updating admin password", err)
+        return res.status(500).json({
+            message:"Error updating admin password", 
+            err:err.stack})
     }
 }
 // all about customer
@@ -150,25 +153,28 @@ exports.registerCustomer = async (req, res)=>{
                 [firstName, lastName, username, email, phoneNumber, hashedPassword]
         )
         return res.status(201).json({message:"Customer successfully created"});
-    }catch(error){
-        console.log('Registeration failed: ', error.message)
-        return res.status(500).json({message:'Error registering customer', error})
+    }catch(err){
+        console.log('Registeration failed: ', err.message)
+        return res.status(500).json({
+            message:'Error registering customer', 
+            err:err.stack})
     }
 }
 // customer login AND authentication with jwt(06/4/25)
 exports.logInCustomer =  async (req, res)=>{
-    const {email, password} = req.body
     try{
         const checkLoginInput = await checkValidationResult(req)
-        if(checkLoginInput) return res.status(400).json({message: 'Please fix input error'})
-        
+        if(checkLoginInput) return res.status(400).json({
+            message: 'Please fix input error',
+            validationErrors :checkLoginInput
+            })
+        const {email, password} = req.body
         const [customer] = await db.query("SELECT * FROM customers WHERE email = ?", [email])
         // check if customer exist
         if(!customer || customer.length === 0){
             return res.status(400).json({message:"Customer's email doesn't exist. Please register"}); 
         }
         const passwordMatch = await bcrypt.compare(password,customer[0].password_hash)
-        console.log('Password match',passwordMatch)
         if(!passwordMatch){
             return res.status(401).json({message:'Invalid password'})
         }
@@ -203,7 +209,10 @@ exports.logInCustomer =  async (req, res)=>{
 exports.changeCustomerPassword = async(req, res)=>{
     try{
         const checkChangePWInput = await checkValidationResult(req)
-        if(checkChangePWInput) return res.status(400).json({message: 'Please fix input error'})
+        if(checkChangePWInput) return res.status(400).json({
+            message: 'Please fix input error',
+            validationErrors : checkChangePWInput
+        })
         const {email, newPassword} = req.body
         const jwtOtpEmail = req.jwtOtp.email
         //check if email and jwtEmail match
@@ -223,9 +232,11 @@ exports.changeCustomerPassword = async(req, res)=>{
             WHERE email = ?`, 
             [hashedPassword, email])
         return res.status(201).json({message:"Passwword updated succesfully"})
-    }catch(error){
-     console.error("Error updating customer password", error)
-     return res.status(500).json({message:"Error updating customer password", error:error.stack})
+    }catch(err){
+     console.error("Error updating customer password", err)
+     return res.status(500).json({
+        message:"Error updating customer password", 
+        err:err.stack})
     }
  }
  
@@ -242,9 +253,11 @@ exports.getCustomerUsername = async (req, res)=>{
             return res.status(401).json({message: 'Customer username does not exist'})
         }
         return res.status(200).json({ username: getCustomer[0].username });
-    }catch(error){
-        console.error('Error getting customer username', error)
-        return res.status(500).json({message:"Failed fetching customer username", error:error.stack})
+    }catch(err){
+        console.error('Error getting customer username', err)
+        return res.status(500).json({
+            message:"Failed fetching customer username", 
+            err:err.stack})
     }
 }
 
@@ -285,17 +298,18 @@ exports.logoutCustomer = async(req, res)=>{
         const username = req.username;
         res.clearCookie('customer_token')
         return res.status(200).json({message:`Logout successful. Bye ${username}`})
-    }catch(error){
-        console.error("Error loggin out customer", error)
-        return res.status(500).json({message:"Error login customer out", error:error.stack})
+    }catch(err){
+        console.error("Error loggin out customer", err)
+        return res.status(500).json({
+            message:"Error login customer out", 
+            err:err.stack})
     }
 }
 exports.viewCustomers = async (req, res)=>{
     try{
         const [getCustomer] = await db.query(`
             SELECT customer_id, first_name, last_name, username, email, phone_number 
-            FROM customers
-            WHERE customer_id = ?`, [userId]);
+            FROM customers`)
         return res.status(200).json(getCustomer)
     }catch(err){
         console.error("Gettng customers failed", err)
@@ -305,6 +319,7 @@ exports.viewCustomers = async (req, res)=>{
 exports.customerProfile = async (req, res)=>{
     try{
         const userId = req.userId
+        if(!userId) return res.status(401).json({message: 'Sorry! Not for you'})
         const [getProfile] = await db.query(`
             SELECT customer_id, first_name, last_name, username, email, phone_number 
             FROM customers
@@ -363,7 +378,9 @@ exports.createServices = async (req, res)=>{
         }
     }catch(err){
         console.error("Error detected", err)
-        return res.status(500).json({message:"Error detected in creating service", err:err.stack})
+        return res.status(500).json({
+            message:"Error detected in creating service", 
+            err:err.stack})
     }
 }
 
@@ -381,7 +398,6 @@ exports.registerStylist = async (req, res)=>{
                 validationErrors: checkStylistInput})
         }
         const {firstName, lastName, username, email, phoneNumber, password, specialization} = req.body
-        console.log(req.body)
         const [checkStylist] = await db.execute("SELECT email FROM stylists WHERE email =?", [email])
         if(checkStylist.length> 0){
             return res.status(400).json({message:"STylist already exist"})
@@ -394,8 +410,10 @@ exports.registerStylist = async (req, res)=>{
             [firstName, lastName, username, email, phoneNumber, hashedPassword, specialization]
     )    
     return res.status(201).json({message:"Stylist successfully created"});
-    }catch(error){
-        return res.status(500).json({message:'Error registering stylist', error})
+    }catch(err){
+        return res.status(500).json({
+            message:'Error registering stylist', 
+            err: err.stack})
     }
 }
 exports.loginStylist = async (req, res)=>{
@@ -436,9 +454,11 @@ exports.loginStylist = async (req, res)=>{
                 maxAge : 60*60*1000
             })
         return res.status(200).json({message: `Welcome ${checkStylist[0].username}`})
-    }catch(error){
-        console.error('Error log in stylist', error)
-        return res.status(500).json({message:"Error loggig in stylist", error:error.stack})
+    }catch(err){
+        console.error('Error log in stylist', err)
+        return res.status(500).json({
+            message:"Error loggig in stylist", 
+            err:err.stack})
     }
 }
 exports.changeStylistPassword = async(req, res)=>{
@@ -451,7 +471,7 @@ exports.changeStylistPassword = async(req, res)=>{
         }
         const {email, newPassword} = req.body
         const jwtOtpEmail = req.jwtOtp.email
-        //check if email and jwtEmail match
+        //validate jwtOtpEmail and email 
         if(jwtOtpEmail !== email){
             return res.status(401).json({message:'OTP verification required'})
         }
@@ -468,9 +488,11 @@ exports.changeStylistPassword = async(req, res)=>{
             WHERE email = ?`, 
             [hashedPassword, email])
         return res.status(201).json({message:"Passwword updated succesfully"})
-    }catch(error){
-     console.error("Error updating stylist password", error)
-     return res.status(500).json({message:"Error updating stylist password", error:error.stack})
+    }catch(err){
+     console.error("Error updating stylist password", err)
+     return res.status(500).json({
+        message:"Error updating stylist password", 
+        err:err.stack})
     }
  }
  
@@ -487,12 +509,14 @@ exports.getStylistsUsername = async (req, res)=>{
             return res.status(401).json({message: 'Stylist username does not exist'})
         }
         return res.status(200).json({ username: getStylist[0].username });
-    }catch(error){
-        console.error('Error getting stylist username', error)
-        return res.status(500).json({message:"Failed fetching stylist username", error:error.stack})
+    }catch(err){
+        console.error('Error getting stylist username', err)
+        return res.status(500).json({
+            message:"Failed fetching stylist username", 
+            err:err.stack})
     }
 }
-// change styPro back to styApp later. But for now, use for the sake of React Frontend
+
 exports.stylistAppointment = async (req, res)=>{
     try{
         const stylistId = req.stylistId
@@ -503,7 +527,7 @@ exports.stylistAppointment = async (req, res)=>{
                 WHERE stylist_id = ?`,
             [stylistId])
         if (checkStylist.length === 0){
-            res.status(401).json({message: 'Not a stylist'})
+            return res.status(401).json({message: 'Not a stylist'})
         }
         const [myAppointments] = await db.query(`
             SELECT 
@@ -529,15 +553,36 @@ exports.stylistAppointment = async (req, res)=>{
         return res.status(500).json({message:"Stylist profile error", error:error.stack})
     }
 }
+exports.stylistProfile = async (req,res)=>{
+    try{
+        const stylistId = req.stylistId
+        if(!stylistId) return res.status(400).json({message: 'Not permitted'})
+        const [getStylistsProfile] = await db.query(`
+            SELECT 
+                stylist_id, first_name, last_name, username, phone_number,
+                    email, specialization
+                FROM stylists
+                WHERE stylist_id = ?`, [stylistId])
+        if(getStylistsProfile.length === 0) 
+            return res.status(404).json({message: 'No stylist record found'})
+        return res.status(200).json(getStylistsProfile) 
+    }catch(err){
+        return res.status(500).json({
+            message: 'Error accessing stylist profile', 
+            err:err.stack})
+    }
+}
 exports.logoutStylist = async (req, res)=>{
     try{
         const username = req.stylistUsername
         if(!username) return res.status(401).json({message: 'Not permitted'})
         res.clearCookie('stylist_token')
-        res.status(200).json({message:`Logout succesfully. Bye ${username}`})
-    }catch(error){
-        console.error('Error loggin out stylist', error)
-        return res.status(500).json({message:"Error loggig out stylist", error:error.stack})
+        return res.status(200).json({message:`Logout succesfully. Bye ${username}`})
+    }catch(err){
+        console.error('Error loggin out stylist', err)
+        return res.status(500).json({
+            message:"Error loggig out stylist", 
+            err:err.stack})
     }
 }
 exports.viewStylists = async (req, res)=>{
@@ -552,7 +597,6 @@ exports.viewStylists = async (req, res)=>{
 }
 //appointments logic
 exports.createAppointment = async (req, res) =>{
-    console.log(req.body)
     try{
         const checkAppointmentInput = await checkValidationResult(req)
         if(checkAppointmentInput){
@@ -590,7 +634,6 @@ exports.createAppointment = async (req, res) =>{
             [apCheckValue]
         )
         if(checkAppointment.length > 0){
-            console.log("existing Appoinment", checkAppointment)
             return res.status(400).json({message:"Appointment already booked for the week"});
         }
         const [reviewAppointment] = await db.query(`
@@ -613,7 +656,6 @@ exports.createAppointment = async (req, res) =>{
                 [stylistUsername, hairStyle]
         )
         if(checkStylistSpec.length === 0){
-            console.log("stylistSpec: ", checkStylistSpec)
             return res.status(401).json({message:"Not stylist's area of specialty"})
         }
         const apValue = [queryCustomer[0].customer_id,queryStylist[0].stylist_id, queryService[0].service_id, appointmentDate, appointmentTime, 'pending']
@@ -696,8 +738,6 @@ exports.createReview = async(req,res)=>{
         if(queryService.length === 0){
             res.status(401).json({message: 'Not a service you were offered'})
         }
-        console.log("customer id", checkCustomer[0].customer_id)
-        console.log("service id: ", queryService[0].service_id)
         const [checkReview] = await db.query(`
             SELECT * 
                 FROM reviews
@@ -713,9 +753,11 @@ exports.createReview = async(req,res)=>{
                 VALUE(?,?,?,?)`,
             [checkCustomer[0].customer_id, queryService[0].service_id, rating, feedback])
             return res.status(201).json({message: 'Review successfully created'})
-    }catch(error){
-        console.log("Error creating review", error)
-        return res.status(500).json({message:'Creating review failed', error:error.stack})
+    }catch(err){
+        console.log("Error creating review", err)
+        return res.status(500).json({
+            message:'Creating review failed', 
+            err:err.stack})
     }
 }
 exports.viewReviews = async (req, res)=>{
@@ -727,12 +769,13 @@ exports.viewReviews = async (req, res)=>{
                 JOIN services serv USING (service_id)
             `)
         return res.status(200).json(getReviews)
-    }catch(error){
-        console.log("Error fetching reviews", error)
-        return res.status(500).json({message:'Fetching reviews failed', error:error.stack})
+    }catch(err){
+        console.log("Error fetching reviews", err)
+        return res.status(500).json({
+            message:'Fetching reviews failed', 
+            err:err.stack})
     }
 }
-
 exports.sendOtp = async (req, res)=>{
     try{
         const checkOtpInput = await checkValidationResult(req)
@@ -757,7 +800,7 @@ exports.sendOtp = async (req, res)=>{
                 checkStylistEmail.length == 0
             ) return res.status(401).json({message : 'Invalid email'})  
         // create four digits otp
-        const otp = Math.floor(1000 + Math.random() * 9999).toString()
+        const otp = Math.floor(1000 + Math.random() * 9000).toString()
         const otpPayload = {
             email,
             otp,
@@ -767,7 +810,7 @@ exports.sendOtp = async (req, res)=>{
         const jwtOtp = jwt.sign(
             otpPayload, 
             process.env.JWT_SECRET,
-            {expiresIn : '2m'}
+            {expiresIn : '5m'}
         )
         // store jwt contents in cookie
         res.cookie('jwtOtp', jwtOtp,
@@ -780,15 +823,14 @@ exports.sendOtp = async (req, res)=>{
         )
         await sendOtpEmail(email, otp);
         return res.status(200).json({message:'OTP sent to your email'})
-    }catch(error){
-        console.log("Error occured while sending otp", error)
+    }catch(err){
+        console.log("Error occured while sending otp", err)
         return res.status(500).json({
             message: 'Sending otp error. Please check internet connection', 
-            error:error.message
+            err:err.message
         })
     }
 }
-
 exports.validateJwtOtp = async (req, res) =>{
     try{
         const checkJwtOtpInput = await checkValidationResult(req)
@@ -797,7 +839,7 @@ exports.validateJwtOtp = async (req, res) =>{
                 message:"Please fix error", 
                 validationErrors:checkJwtOtpInput })
         }
-        const { otp:enteredOtp} = req.body
+        const { enteredOtp} = req.body
         //ensuring proper otp decoding
         if(!req.jwtOtp || req.jwtOtp.type !== 'otp'){
             return res.status(401).json({message: 'Not an OTP token'})
@@ -808,8 +850,10 @@ exports.validateJwtOtp = async (req, res) =>{
                 return res.status(401).json({message: 'Invalid or expired OTP'})
             } 
         return res.status(200).json({message: 'OTP verification succesful'})
-    }catch(error){
-        console.log("Error occured validating otp", error)
-        return res.status(500).json({message: 'OTP validation error', error:error.stack})
+    }catch(err){
+        console.log("Error occured validating otp", err)
+        return res.status(500).json({
+            message: 'OTP validation error', 
+            err:err.stack})
     }
 }
