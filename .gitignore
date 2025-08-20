@@ -3,6 +3,10 @@ sample.js
 sampleHTML.html
 workingCustomerlogic.js
 unmodifiedLoginCustomer.html
-*.json
-/node_modules
+report.json
+**/node_modules/
 /archive
+tests/
+logs/
+/frontend/
+/react_frontend/
