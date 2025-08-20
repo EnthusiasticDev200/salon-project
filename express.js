@@ -57,6 +57,8 @@ app.use('',(req, res)=>{
 //Socket set-up
 initSocket(server); 
 
+// Render deployment
+app.get("/healthz", (req, res) => res.send("OK"));
 
 const PORT = process.env.APP_PORT
 server.listen(PORT, ()=>{
