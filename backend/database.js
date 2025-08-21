@@ -1,15 +1,20 @@
 const mysql = require('mysql2')
 const dotenv = require('dotenv')
+const fs = require('fs')
 
 
 dotenv.config()
 
-const db = mysql.createPool(
+const db =  await mysql.createPool(
     {
         host: process.env.DB_HOST,
-        user : process.env.DB_USER,
+        user : process.env.DB_USERNAME,
         password : process.env.DB_PASSWORD,
-        database : process.env.DB_NAME
+        database : process.env.DATABASE,
+        port : process.env.DB_PORT,
+        ssl: {
+            ca: fs.readFileSync(process.env.DB_CA)
+        }, 
     }
 )
 
