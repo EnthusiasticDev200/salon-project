@@ -358,7 +358,6 @@ exports.updateCustomerProfile = async (req, res)=>{
 }
 //services logic
 exports.createServices = async (req, res)=>{
-    const {hairStyle, price} = req.body
     try{
         const checkCreateServiceInput = await checkValidationResult(req)
         if(checkCreateServiceInput){
@@ -367,15 +366,15 @@ exports.createServices = async (req, res)=>{
                 validationErrors : checkCreateServiceInput
             })
         }
-        const [checkHairStyle] = await db.execute("SELECT hair_style FROM services WHERE hair_style =?", [hairStyle])
-        (!checkHairStyle || checkHairStyle.length === 0)
-        if(!checkHairStyle || checkHairStyle.length === 0){
-            await db.query(`INSERT INTO services(hair_style, price) VALUE(?,?)`, [hairStyle, price]);
-            return res.status(200).json({message:"Service successfully created"})
-        };
+        const {hairStyle, price} = req.body
+        const [checkHairStyle] = await db.execute(`
+            SELECT hair_style FROM services WHERE hair_style =?`, 
+            [hairStyle])
         if(checkHairStyle.length > 0){
             return res.status(401).json({message:'This service is already provided'})
         }
+        await db.query(`INSERT INTO services(hair_style, price) VALUE(?,?)`, [hairStyle, price]);
+        return res.status(200).json({message:"Service successfully created"})
     }catch(err){
         console.error("Error detected", err)
         return res.status(500).json({
