@@ -273,11 +273,11 @@ exports.CustomerAppointment = async (req, res)=>{
         }
         const [checkMyappointment] = await db.query(`
             SELECT 
-                appointment_id, 
-                s.username AS stylist_username, 
-                serv.hair_style AS hair_style, 
-                DATE_FORMAT(appointment_date, '%Y-%m-%d') AS appointment_date,
-                TIME_FORMAT(appointment_time, '%H:%i') AS appointment_time,
+                appointment_id AS appointmentId, 
+                s.username AS stylistUsername, 
+                serv.hair_style AS hairStyle, 
+                DATE_FORMAT(appointment_date, '%Y-%m-%d') AS date,
+                TIME_FORMAT(appointment_time, '%H:%i') AS time,
                 status 
                 FROM appointments 
                 JOIN stylists s USING(stylist_id) 
