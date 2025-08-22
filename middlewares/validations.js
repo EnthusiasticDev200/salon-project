@@ -109,7 +109,11 @@ const validateOtp =
 const validateService = 
 [
     check("hairStyle", "Hair style is required").notEmpty().toLowerCase(),
-    check('price', 'Price field id required').notEmpty().isInt()
+    check('price', 'Price field id required')
+    .notEmpty()
+    .isInt({min:2000, max:10000})
+    .withMessage("Price must be within 2,000 - 10, 000")
+    
 ]
 
 const validateCustomerUpdate = 
