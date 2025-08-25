@@ -75,7 +75,7 @@ exports.logInAdmin = async (req, res)=>{
         res.cookie('admin_token', adminToken, 
             {
                 httpOnly : true,
-                secure : false,
+                secure : true,
                 sameSite: 'Strict',
                 maxAge : 60*60*1000
             })
@@ -196,7 +196,7 @@ exports.logInCustomer =  async (req, res)=>{
         res.cookie('customer_token', customerToken, 
             {
                 httpOnly : true,
-                secure : false,
+                secure : true,
                 sameSite: 'Strict',
                 maxAge : 60*60*1000
             })
@@ -448,7 +448,7 @@ exports.loginStylist = async (req, res)=>{
         res.cookie('stylist_token', stylistToken, 
             {
                 httpOnly : true,
-                secure : false,
+                secure : true,
                 sameSite: 'Strict',
                 maxAge : 60*60*1000
             })
