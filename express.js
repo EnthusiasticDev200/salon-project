@@ -17,7 +17,10 @@ const server = http.createServer(app);
 //cors set-up
 app.use(
   cors({
-    origin: "http://localhost:3100", //change to 5173 for vite
+    origin: [
+      `http://localhost:${process.env.APP_PORT}`,
+      `http://localhost:${process.env.REACT_TEST_PORT}`
+    ], 
     credentials: true,
   })
 );
