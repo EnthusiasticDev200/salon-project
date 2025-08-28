@@ -14,12 +14,17 @@ const logger = require("./utils/logger");
 const app = express();
 const server = http.createServer(app);
 
+
+//ports
+const PORT = process.env.APP_PORT;
+const reactPORT = process.env.REACT_TEST_PORT
+
 //cors set-up
 app.use(
   cors({
     origin: [
-      `http://localhost:${process.env.APP_PORT}`,
-      `http://localhost:${process.env.REACT_TEST_PORT}`
+      `http://localhost:${PORT}`,
+      `http://localhost:${reactPORT}`
     ], 
     credentials: true,
   })
@@ -76,7 +81,7 @@ app.use((err, req, res, next) => {
   }
 });
 
-const PORT = process.env.APP_PORT;
+
 server.listen(PORT, () => {
   logger.info(`Server started on http://localhost:${PORT}`);
   console.log(`Server is running on http://localhost:${PORT}`);

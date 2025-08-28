@@ -35,7 +35,7 @@ const
 //admin's endpoints 
 router.post('/admin/register', strictLimiter ,validateAdmin, registerAdmin)
 router.post('/admin/login',strictLimiter,logInAdmin)
-router.get("/admin/logout", mildLimiter,logoutAdmin)
+router.get("/admin/logout", mildLimiter,authenticateJWT,logoutAdmin)
 router.put('/admin/updatepassword', strictLimiter, validateLoginAndChangePassword,verifyOtp, changeAdminPassword)
 
 //customer's endpoints
