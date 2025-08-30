@@ -20,7 +20,9 @@ const authenticateJWT = (req, res, next)=>{
     }
     if(customerToken){
         try{
-            decoded = jwt.verify(customerToken, process.env.JWT_SECRET)
+            decoded = jwt.verify(customerToken, process.env.JWT_SECRET, {
+                'algorithms' : [`HS256`]
+            })
             req.userId = decoded.userId || null;
             req.username = decoded.username || null; 
         }catch(error){
