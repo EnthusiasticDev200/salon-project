@@ -10,7 +10,7 @@ const authenticateJWT = (req, res, next)=>{
     let decoded;
     if(adminToken){
        try{
-            decoded = jwt.verify(customerToken, process.env.JWT_SECRET, {
+            decoded = jwt.verify(adminToken, process.env.JWT_SECRET, {
                 'algorithms' : [`HS256`]
             })
             req.adminId = decoded.adminId || null;
@@ -33,7 +33,7 @@ const authenticateJWT = (req, res, next)=>{
     }
     if(stylistToken){
         try{
-            decoded = jwt.verify(customerToken, process.env.JWT_SECRET, {
+            decoded = jwt.verify(stylistToken, process.env.JWT_SECRET, {
                 'algorithms' : [`HS256`]
             })
             req.stylistId = decoded.stylistId || null;
