@@ -10,6 +10,7 @@ const http = require("http");
 const authRoutes = require("./backend/routes/authRoutes");
 const { initSocket } = require("./backend/socketHandler");
 const logger = require("./utils/logger");
+const allowedOrigins = require('./backend/cors')
 
 const app = express();
 const server = http.createServer(app);
@@ -17,16 +18,18 @@ const server = http.createServer(app);
 
 //ports
 const PORT = process.env.APP_PORT;
-const reactPORT = process.env.REACT_TEST_PORT
+
 
 //cors set-up
 app.use(
   cors({
-    origin: [
-      `http://localhost:${PORT}`,
-      `http://localhost:${reactPORT}`,
-      "https://khleancutz-salon.onrender.com",
-    ], 
+    origin: function(origin, callback){
+      if(!origin || allowedOrigins.includes(origin)){
+        callback(null, true)
+      } else{
+        callback(new Error('Not allowed by CORS'))
+      }
+    }, 
     credentials: true,
   })
 );

@@ -1,4 +1,5 @@
 const db = require('./database')
+const allowedOrigins = require('./cors')
 
 let io = null
 
@@ -6,11 +7,7 @@ function initSocket(server){
     const {Server} = require('socket.io')
     io = new Server(server, {
         cors : {
-            origin: [
-                "http://localhost:3100",
-                "http://localhost:5173", 
-                "https://khleancutz-salon.onrender.com",
-            ], 
+            origin: allowedOrigins, 
             methods: ["GET", "POST"],
             credentials: true
         }
