@@ -64,7 +64,7 @@ router.get("/stylist/profile", mildLimiter, authenticateJWT, stylistProfile)
 router.get("/stylist/appointment",mildLimiter, authenticateJWT, stylistAppointment)
 router.get('/stylist/me', mildLimiter,authenticateJWT,getStylistsUsername)
 router.get('/stylist/logout', mildLimiter,authenticateJWT,logoutStylist)
-router.get('/stylist/view',mildLimiter, authenticateJWT, requireSuperuser, viewStylists)
+router.get('/stylist/view',mildLimiter, authenticateJWT, viewStylists)
 
 //appointment endpoint
 router.post('/appointment/create', strictLimiter, validateAppointment,authenticateJWT, createAppointment)
