@@ -8,7 +8,8 @@ function initSocket(server){
         cors : {
             origin: [
                 "http://localhost:3100",
-                "http://localhost:5173"
+                "http://localhost:5173", 
+                "https://khleancutz-salon.onrender.com",
             ], 
             methods: ["GET", "POST"],
             credentials: true

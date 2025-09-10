@@ -24,7 +24,8 @@ app.use(
   cors({
     origin: [
       `http://localhost:${PORT}`,
-      `http://localhost:${reactPORT}`
+      `http://localhost:${reactPORT}`,
+      "https://khleancutz-salon.onrender.com",
     ], 
     credentials: true,
   })
