@@ -6,7 +6,10 @@ function initSocket(server){
     const {Server} = require('socket.io')
     io = new Server(server, {
         cors : {
-            origin: "http://localhost:3100", //change to Vite later 5173
+            origin: [
+                "http://localhost:3100",
+                "http://localhost:5173"
+            ], 
             methods: ["GET", "POST"],
             credentials: true
         }
