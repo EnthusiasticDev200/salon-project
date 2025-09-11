@@ -1,5 +1,5 @@
 const express = require('express')
-const {authenticateJWT, requireSuperuser, verifyOtp, customerOnly} = require('../../middlewares/auth')
+const {authenticateJWT, requireSuperuser, verifyOtp, customerOnly, validateRefreshJWToken} = require('../../middlewares/auth')
 const router = express.Router()
 const {strictLimiter, mildLimiter} = require('../../middlewares/rateLimiter')
 const 
@@ -29,6 +29,7 @@ const
     createAppointment, viewAppointments,
     createReview,viewReviews,
     sendOtp, validateJwtOtp,
+    refreshJWTokens,
     
 } = require('../authController')
 
@@ -65,6 +66,9 @@ router.get("/stylist/appointment",mildLimiter, authenticateJWT, stylistAppointme
 router.get('/stylist/me', mildLimiter,authenticateJWT,getStylistsUsername)
 router.get('/stylist/logout', mildLimiter,authenticateJWT,logoutStylist)
 router.get('/stylist/view',mildLimiter, authenticateJWT, viewStylists)
+
+// refresh token endpoint
+router.post('/token/refresh', mildLimiter, validateRefreshJWToken, refreshJWTokens )
 
 //appointment endpoint
 router.post('/appointment/create', strictLimiter, validateAppointment,authenticateJWT, createAppointment)

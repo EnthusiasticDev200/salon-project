@@ -1,16 +1,16 @@
 const db = require('./database')
 const bcrypt = require('bcryptjs')
-const jwt = require('jsonwebtoken')
 const dotenv = require("dotenv")
-const {validationResult, cookie} = require("express-validator") 
+const { validationResult } = require("express-validator") 
 const { notifyStylist, notifyCustomer } = require('./socketHandler');
 const {sendOtpEmail} = require('../utils/mailer')
+const generateJWToken = require('../utils/token')
 
 dotenv.config()
 
 async function checkValidationResult(req){
     const validationErrors = validationResult(req)
-    console.log("validationErrorfunc: ", validationErrors)
+    //console.log("validationErrorfunc: ", validationErrors)
     if(!validationErrors.isEmpty()){
       return validationErrors.array().map(err=>err.msg); // return only msg prop
     }
@@ -59,16 +59,23 @@ exports.logInAdmin = async (req, res)=>{
             return res.status(401).json({message:"Invalid password"})
         }
         const adminUser = checkAdmin[0]
+
         const payload =  
             {
                 adminId: adminUser.admin_id,
                 adminUsername: adminUser.username,
                 role: adminUser.role,
             }
-        const adminToken = jwt.sign(
-            payload, 
-            process.env.JWT_SECRET, 
-            {expiresIn: "1h"})
+        
+        const refreshAdminPayload = {adminId: adminUser.admin_id}
+
+        const adminToken = generateJWToken.accessToken(payload)
+      
+
+        const refreshToken = generateJWToken.refreshToken(
+            refreshAdminPayload
+        )
+
         //drop any previous cookie
         res.clearCookie('admin_token'); 
         //setting up new cookie 
@@ -77,7 +84,14 @@ exports.logInAdmin = async (req, res)=>{
                 httpOnly : true,
                 secure : true,
                 sameSite: 'Strict',
-                maxAge : 60*60*1000
+                maxAge : 10 * 60 * 1000
+            })
+        res.cookie('refresh_admin_token', refreshToken, 
+            {
+                httpOnly : true,
+                secure : true,
+                sameSite: 'Strict',
+                maxAge : 24 * 60 * 1000
             })
         return res.status(200).json({message:`Welcome ${checkAdmin[0].username}`})
     }catch(err){
@@ -92,6 +106,7 @@ exports.logoutAdmin = async(req, res)=>{
     try{
         const username = req.adminUsername
         res.clearCookie('admin_token')
+        res.clearCookie('refresh_admin_token')
         return res.status(200).json({message:`Logout successful. Bye ${username}`}) 
     }catch(err){
         console.error("Error loggin out admin", err)
@@ -102,7 +117,6 @@ exports.logoutAdmin = async(req, res)=>{
 }
 
 exports.changeAdminPassword = async(req, res)=>{
-    console.log('Admin input: ', req.body)
    try{
         const checkAdminPWInput = await checkValidationResult(req)
         if(checkAdminPWInput) return res.status(400).json({
@@ -185,10 +199,15 @@ exports.logInCustomer =  async (req, res)=>{
             userId:user.customer_id, 
             username:user.username,
         }
-        const customerToken = jwt.sign(
-            payload, 
-            process.env.JWT_SECRET, 
-            {expiresIn:'1h'}
+
+        const refreshCustomerPayload = {
+            userId:user.customer_id,
+        }
+
+        const customerToken = generateJWToken.accessToken(payload)
+
+        const refreshToken = generateJWToken.refreshToken(
+            refreshCustomerPayload
         )
         //drop any previous cookie
         res.clearCookie('customer_token'); 
@@ -198,7 +217,14 @@ exports.logInCustomer =  async (req, res)=>{
                 httpOnly : true,
                 secure : true,
                 sameSite: 'Strict',
-                maxAge : 60*60*1000
+                maxAge : 2 * 60 *1000
+            })
+        res.cookie('refresh_customer_token', refreshToken, 
+            {
+                httpOnly : true,
+                secure : true,
+                sameSite: 'Strict',
+                maxAge : 24 * 60 * 1000
             })
         return res.status(200).json({message:`Login successful. Welcome ${user.username}`})
     }catch(err){
@@ -297,6 +323,7 @@ exports.logoutCustomer = async(req, res)=>{
     try{
         const username = req.username;
         res.clearCookie('customer_token')
+        res.clearCookie('refresh_customer_token')
         return res.status(200).json({message:`Logout successful. Bye ${username}`})
     }catch(err){
         console.error("Error loggin out customer", err)
@@ -401,14 +428,14 @@ exports.registerStylist = async (req, res)=>{
         if(checkStylist.length> 0){
             return res.status(400).json({message:"STylist already exist"})
     };
-    const hashedPassword = await bcrypt.hash(password, 10)
-    await db.query(`
-        INSERT INTO 
-            stylists(first_name, last_name, username, email, phone_number, password_hash, specialization) 
-            VALUE(?,?,?,?,?,?,?)`,
-            [firstName, lastName, username, email, phoneNumber, hashedPassword, specialization]
-    )    
-    return res.status(201).json({message:"Stylist successfully created"});
+        const hashedPassword = await bcrypt.hash(password, 10)
+        await db.query(`
+            INSERT INTO 
+                stylists(first_name, last_name, username, email, phone_number, password_hash, specialization) 
+                VALUE(?,?,?,?,?,?,?)`,
+                [firstName, lastName, username, email, phoneNumber, hashedPassword, specialization]
+        )    
+        return res.status(201).json({message:"Stylist successfully created"});
     }catch(err){
         return res.status(500).json({
             message:'Error registering stylist', 
@@ -438,10 +465,14 @@ exports.loginStylist = async (req, res)=>{
                 stylistId : stylistUser.stylist_id,
                 stylistUsername : stylistUser.username,
             }
-        const stylistToken = jwt.sign(
-            payload, 
-            process.env.JWT_SECRET, 
-            {expiresIn: "1h"})
+        
+        const refreshStylistPayload = { stylistId : stylistUser.stylist_id} 
+        const stylistToken = generateJWToken.accessToken(payload)
+        
+        const refreshToken = generateJWToken.refreshToken(
+            refreshStylistPayload
+        )
+        
         //drop any previous cookie
         res.clearCookie('stylist_token'); 
         //setting up new cookie 
@@ -450,7 +481,14 @@ exports.loginStylist = async (req, res)=>{
                 httpOnly : true,
                 secure : true,
                 sameSite: 'Strict',
-                maxAge : 60*60*1000
+                maxAge : 10 * 60 * 1000
+            })
+        res.cookie('refresh_stylist_token', refreshToken, 
+            {
+                httpOnly : true,
+                secure : true,
+                sameSite: 'Strict',
+                maxAge : 24 * 60 * 1000
             })
         return res.status(200).json({message: `Welcome ${checkStylist[0].username}`})
     }catch(err){
@@ -576,6 +614,7 @@ exports.logoutStylist = async (req, res)=>{
         const username = req.stylistUsername
         if(!username) return res.status(401).json({message: 'Not permitted'})
         res.clearCookie('stylist_token')
+        res.clearCookie('refresh_stylist_token')
         return res.status(200).json({message:`Logout succesfully. Bye ${username}`})
     }catch(err){
         console.error('Error loggin out stylist', err)
@@ -593,6 +632,96 @@ exports.viewStylists = async (req, res)=>{
         console.error("Getting stylists failed", err)
         return res.status(500).json({message:"Error fetching stylists", err:err.stack})
     }    
+}
+
+// refresh token logic
+exports.refreshJWTokens = async (req, res)=>{
+    const adminId = req.adminId
+    const userId = req.userId
+    const stylistId = req.stylistId
+    
+    if(!adminId && !userId && !stylistId){
+        return res.status(401).json({
+            message: "Unathorized"})
+    }
+    try{
+        if(adminId){
+            const [checkAdmin] = await db.query(`
+                SELECT admin_id, username, role
+                FROM admins
+                WHERE admin_id = ?`, [adminId])
+            if(checkAdmin.length === 0){
+                return res.status(404).json({message: "Admin not found"})
+            }
+            const adminUser = checkAdmin[0]
+
+            const adminPayload = {
+                adminId: adminUser.admin_id,
+                adminUsername: adminUser.username,
+                role: adminUser.role,
+            }
+            const newAdminToken = generateJWToken.accessToken(adminPayload)
+            res.cookie('admin_token', newAdminToken, {
+                httpOnly : true,
+                secure : process.env.NDDE_ENV === 'production',
+                sameSite : "Strict",
+                maxAge : 2 * 60 * 60
+            })
+        return res.status(200).json({message: "Refresh token successfully created"})
+    }
+        if(userId){
+            const [checkCustomer] = await db.query(`
+                SELECT customer_id, username
+                FROM customers
+                WHERE customer_id = ?`, [userId])
+            if(checkCustomer.length === 0){
+                return res.status(404).json({message: "Customer not found"})
+            }
+            const user = checkCustomer[0]
+
+            const customerPayload = {
+                userId:user.customer_id, 
+                username:user.username,
+            }
+            const newCustomerToken = generateJWToken.accessToken(customerPayload)
+            res.cookie('customer_token', newCustomerToken, {
+                httpOnly : true,
+                secure : process.env.NDDE_ENV === 'production',
+                sameSite : "Strict",
+                maxAge : 10 * 60 * 60
+            })
+        return res.status(200).json({message: "Refresh token successfully created"})
+        }
+        if(stylistId){
+            const [checkStylist] = await db.query(`
+                SELECT stylist_id, username
+                FROM stylists
+                WHERE stylist_id = ?`, [stylistId])
+            if(checkStylist.length === 0){
+                return res.status(404).json({message: "Stylist not found"})
+            }
+            const stylistUser = checkStylist[0]
+
+            const stylistPayload = {
+                stylistId : stylistUser.stylist_id,
+                stylistUsername : stylistUser.username,
+            }
+            const newStylistToken = generateJWToken.accessToken(stylistPayload)
+            res.cookie('stylist_token', newStylistToken, {
+                httpOnly : true,
+                secure : process.env.NDDE_ENV === 'production',
+                sameSite : "Strict",
+                maxAge : 10 * 60 * 60
+            })
+        return res.status(200).json({message: "Refresh token successfully created"})
+        }
+    }catch(error){
+        console.log("Error encountered creating refresh token: ", error)
+        return res.status(500).json({
+            message : "Error generating refresh token",
+            error : error.stack
+        })
+    } 
 }
 //appointments logic
 exports.createAppointment = async (req, res) =>{
@@ -703,7 +832,6 @@ exports.viewAppointments = async (req, res)=>{
                 JOIN services serv USING(service_id)
                 ORDER BY appointment_date DESC, appointment_time DESC
         `)
-        console.log("appointment", getAppointments)
         return res.status(200).json(getAppointments)
     }catch(err){
         console.error("Getting appointments failed", err)
