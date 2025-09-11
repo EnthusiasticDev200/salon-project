@@ -44,11 +44,44 @@ const authenticateJWT = (req, res, next)=>{
     }
 
     if (!req.userId && !req.stylistId && !req.adminId) {
-        return res.status(401).json({ message: 'Access denied. Unauthorized!' });
+        return res.status(401).json({ message: 'Unauthorized. Expired or invalid token!' });
     }
     next()
 }
-const requireSuperuser = async(req, res, next)=>{
+
+const validateRefreshJWToken = (req, res, next)=>{
+    const refreshToken = req.cookies.refresh_admin_token || req.cookies.refresh_customer_token || req.cookies.refresh_stylist_token
+    if( !refreshToken ){
+        return res.status(401).json({message: "No refresh token found"})
+    }
+    try{
+        const decoded = jwt.verify(refreshToken, process.env.REFRESH_JWT_SECRET,{
+                algorithms: ['HS256']
+            })
+        if(decoded.adminId){
+                req.adminId = decoded.adminId || null
+            }
+        else if(decoded.userId){
+                req.userId = decoded.userId || null
+            }
+        else if (decoded.stylistId) {
+                req.stylistId = decoded.stylistId || null
+        }   
+        
+        if(!req.adminId && !req.userId && !req.stylistId){
+            return res.status(403).json({message: "Invalid or expired refresh token"})
+        }
+        next()
+    }catch(error){
+         console.log("Error validating refresh token: ", error)
+        return res.status(500).json({
+            message:"Refresh token validation error",
+            error: error.stack
+        })
+    }
+}
+
+const requireSuperuser = (req, res, next)=>{
    
     if(req.role !== "superuser") return res.status(403).json({message:"Restricted route for superuser"})
 
@@ -74,6 +107,6 @@ const verifyOtp = async (req, res,next) =>{
 
 
 module.exports = {
-    authenticateJWT ,requireSuperuser, verifyOtp,
-    customerOnly
+    authenticateJWT, validateRefreshJWToken,
+    requireSuperuser, verifyOtp, customerOnly
     } //using named export
