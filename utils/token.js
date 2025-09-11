@@ -9,7 +9,7 @@ const generateJWToken = {
             process.env.JWT_SECRET,
             {
                 "algorithm": 'HS256',
-                'expiresIn' : '10M'      
+                'expiresIn' : '10m'      
             }      
         )
         return token

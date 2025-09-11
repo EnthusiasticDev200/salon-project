@@ -82,14 +82,14 @@ exports.logInAdmin = async (req, res)=>{
         res.cookie('admin_token', adminToken, 
             {
                 httpOnly : true,
-                secure : true,
+                secure : process.env.NODE_ENV === 'production',
                 sameSite: 'Strict',
                 maxAge : 10 * 60 * 1000
             })
         res.cookie('refresh_admin_token', refreshToken, 
             {
                 httpOnly : true,
-                secure : true,
+                secure : process.env.NODE_ENV === 'production',
                 sameSite: 'Strict',
                 maxAge : 24 * 60 * 1000
             })
@@ -215,14 +215,14 @@ exports.logInCustomer =  async (req, res)=>{
         res.cookie('customer_token', customerToken, 
             {
                 httpOnly : true,
-                secure : true,
+                secure : process.env.NODE_ENV === 'production',
                 sameSite: 'Strict',
-                maxAge : 2 * 60 *1000
+                maxAge : 10 * 60 *1000
             })
         res.cookie('refresh_customer_token', refreshToken, 
             {
                 httpOnly : true,
-                secure : true,
+                secure : process.env.NODE_ENV === 'production',
                 sameSite: 'Strict',
                 maxAge : 24 * 60 * 1000
             })
@@ -479,14 +479,14 @@ exports.loginStylist = async (req, res)=>{
         res.cookie('stylist_token', stylistToken, 
             {
                 httpOnly : true,
-                secure : true,
+                secure : process.env.NODE_ENV === 'production',
                 sameSite: 'Strict',
                 maxAge : 10 * 60 * 1000
             })
         res.cookie('refresh_stylist_token', refreshToken, 
             {
                 httpOnly : true,
-                secure : true,
+                secure : process.env.NODE_ENV === 'production',
                 sameSite: 'Strict',
                 maxAge : 24 * 60 * 1000
             })
@@ -665,7 +665,7 @@ exports.refreshJWTokens = async (req, res)=>{
                 httpOnly : true,
                 secure : process.env.NDDE_ENV === 'production',
                 sameSite : "Strict",
-                maxAge : 2 * 60 * 60
+                maxAge : 10 * 60 * 60
             })
         return res.status(200).json({message: "Refresh token successfully created"})
     }
