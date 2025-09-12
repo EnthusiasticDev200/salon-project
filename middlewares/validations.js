@@ -38,7 +38,7 @@ const validateStylist =
     .notEmpty()
     .matches(/^\+?\d{10,15}$/) // length 10-15 and accepts country code
     .withMessage("Phone number must be 10 to 15 digits, and may start with '+'"),
-    check("password", "Must contain letters, numbers and 6 or more characters long")
+    check("password", "Password must contain letters, numbers and 6 or more characters long")
         .notEmpty()
         .matches(/^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d]+$/)
         .isLength({min:6}),

@@ -857,6 +857,20 @@ exports.createReview = async(req,res)=>{
         if(checkCustomer.length === 0){
             res.status(401).json({message: `Not a customer`})
         }
+        //appointment must be approved
+        const [checkAppointment] = await db.query(`
+            SELECT 
+		            c.customer_id, s.hair_style, status
+            FROM appointments
+            JOIN customers c USING (customer_id)
+            JOIN services s USING (service_id)
+            WHERE s.hair_style = ?
+                AND customer_id = ? 
+                AND status = 'approved`, [hairStyle, userId])
+        if(checkAppointment.length === 0){
+            return res.status(404).json({
+                message: `Either no appointment record, not approved yet`})
+        }
         const [queryService] = await db.query(`
             SELECT service_id 
                 FROM services
