@@ -19,7 +19,7 @@ const server = http.createServer(app);
 //ports
 const PORT = process.env.APP_PORT;
 
-
+app.set("trust proxy", 1) //For Render
 //cors set-up
 app.use(
   cors({
