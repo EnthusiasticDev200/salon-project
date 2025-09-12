@@ -869,7 +869,7 @@ exports.createReview = async(req,res)=>{
                 AND status = 'approved`, [hairStyle, userId])
         if(checkAppointment.length === 0){
             return res.status(404).json({
-                message: `Either no appointment record, not approved yet`})
+                message: `Either no appointment record, or it's not approved yet`})
         }
         const [queryService] = await db.query(`
             SELECT service_id 
