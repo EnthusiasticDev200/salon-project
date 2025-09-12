@@ -7,8 +7,6 @@ const authenticateJWT = (req, res, next)=>{
     const customerToken = req.cookies.customer_token
     const stylistToken = req.cookies.stylist_token
 
-    console.log("cookies received: ", req.cookies)
-
     let decoded;
     if(adminToken){
        try{
