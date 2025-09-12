@@ -43,7 +43,7 @@ const authenticateJWT = (req, res, next)=>{
         }
     }
 
-    if (!req.userId && !req.stylistId && !req.adminId) {
+    if (!req.userId || !req.stylistId || !req.adminId) {
         return res.status(401).json({ message: 'Unauthorized. Expired or invalid token!' });
     }
     next()
