@@ -7,6 +7,8 @@ const authenticateJWT = (req, res, next)=>{
     const customerToken = req.cookies.customer_token
     const stylistToken = req.cookies.stylist_token
 
+    console.log("cookies received: ", req.cookies)
+
     let decoded;
     if(adminToken){
        try{
@@ -43,7 +45,7 @@ const authenticateJWT = (req, res, next)=>{
         }
     }
 
-    if (!req.userId || !req.stylistId || !req.adminId) {
+    if (!req.userId && !req.stylistId && !req.adminId) {
         return res.status(401).json({ message: 'Unauthorized. Expired or invalid token!' });
     }
     next()

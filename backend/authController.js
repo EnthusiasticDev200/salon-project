@@ -83,14 +83,14 @@ exports.logInAdmin = async (req, res)=>{
             {
                 httpOnly : true,
                 secure : process.env.NODE_ENV === 'production',
-                sameSite: 'Strict',
+                sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
                 maxAge : 10 * 60 * 1000
             })
         res.cookie('refresh_admin_token', refreshToken, 
             {
                 httpOnly : true,
                 secure : process.env.NODE_ENV === 'production',
-                sameSite: 'Strict',
+                sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
                 maxAge : 24 * 60 * 1000
             })
         return res.status(200).json({message:`Welcome ${checkAdmin[0].username}`})
@@ -216,14 +216,14 @@ exports.logInCustomer =  async (req, res)=>{
             {
                 httpOnly : true,
                 secure : process.env.NODE_ENV === 'production',
-                sameSite: 'Strict',
+                sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
                 maxAge : 10 * 60 *1000
             })
         res.cookie('refresh_customer_token', refreshToken, 
             {
                 httpOnly : true,
                 secure : process.env.NODE_ENV === 'production',
-                sameSite: 'Strict',
+                sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
                 maxAge : 24 * 60 * 1000
             })
         return res.status(200).json({message:`Login successful. Welcome ${user.username}`})
@@ -480,14 +480,14 @@ exports.loginStylist = async (req, res)=>{
             {
                 httpOnly : true,
                 secure : process.env.NODE_ENV === 'production',
-                sameSite: 'Strict',
+                sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax' ,
                 maxAge : 10 * 60 * 1000
             })
         res.cookie('refresh_stylist_token', refreshToken, 
             {
                 httpOnly : true,
                 secure : process.env.NODE_ENV === 'production',
-                sameSite: 'Strict',
+                sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
                 maxAge : 24 * 60 * 1000
             })
         return res.status(200).json({message: `Welcome ${checkStylist[0].username}`})
@@ -687,7 +687,7 @@ exports.refreshJWTokens = async (req, res)=>{
             res.cookie('customer_token', newCustomerToken, {
                 httpOnly : true,
                 secure : process.env.NDDE_ENV === 'production',
-                sameSite : "Strict",
+                sameSite : process.env.NDDE_ENV === 'production' ? "None" : "Lax",
                 maxAge : 10 * 60 * 60
             })
         return res.status(200).json({message: "Refresh token successfully created"})
@@ -710,7 +710,7 @@ exports.refreshJWTokens = async (req, res)=>{
             res.cookie('stylist_token', newStylistToken, {
                 httpOnly : true,
                 secure : process.env.NDDE_ENV === 'production',
-                sameSite : "Strict",
+                sameSite : process.env.NDDE_ENV === 'production' ? "None" : "Lax",
                 maxAge : 10 * 60 * 60
             })
         return res.status(200).json({message: "Refresh token successfully created"})
