@@ -25,7 +25,7 @@ exports.registerAdmin = async (req, res) =>{
                   validationErrors: checkAdminInput });
         }
         const {username, email, phoneNumber, role, password} = req.body
-        const [checkAdmin] = await db.execute("SELECT * FROM admins WHERE email =?", [email])
+        const [checkAdmin] = await db.execute("SELECT admin_id FROM admins WHERE email =?", [email])
         if(checkAdmin.length> 0){
             return res.status(400).json({message:"Admin already exist"})
         };
@@ -50,7 +50,11 @@ exports.logInAdmin = async (req, res)=>{
                 validationErrors: checkAdminLoginInput
             })
         const {email, password} = req.body
-        const [checkAdmin] = await db.query("SELECT * FROM admins WHERE email = ?", [email])
+        const [checkAdmin] = await db.query(
+            `SELECT admin_id, username, role, password_hash 
+                FROM admins 
+            WHERE email = ?
+            `, [email])
         if(checkAdmin.length === 0){
             return res.status(403).json({message:"Not an admin"})
         }
@@ -59,23 +63,17 @@ exports.logInAdmin = async (req, res)=>{
             return res.status(401).json({message:"Invalid password"})
         }
         const adminUser = checkAdmin[0]
-
         const payload =  
             {
                 adminId: adminUser.admin_id,
                 adminUsername: adminUser.username,
                 role: adminUser.role,
             }
-        
         const refreshAdminPayload = {adminId: adminUser.admin_id}
-
         const adminToken = generateJWToken.accessToken(payload)
-      
-
         const refreshToken = generateJWToken.refreshToken(
             refreshAdminPayload
         )
-
         //drop any previous cookie
         res.clearCookie('admin_token'); 
         //setting up new cookie 
@@ -101,7 +99,6 @@ exports.logInAdmin = async (req, res)=>{
             err:err.stack})
     }
 }
-
 exports.logoutAdmin = async(req, res)=>{
     try{
         const username = req.adminUsername
@@ -132,7 +129,7 @@ exports.changeAdminPassword = async(req, res)=>{
         //generate new password
         const salt = await bcrypt.genSalt(10)
         const hashedPassword = await bcrypt.hash(newPassword, salt)
-        const [checkIfPasswordUpdated] = await db.query("SELECT * FROM admins WHERE password_hash=?", [hashedPassword])
+        const [checkIfPasswordUpdated] = await db.query("SELECT password_hash FROM admins WHERE password_hash=?", [hashedPassword])
         if(checkIfPasswordUpdated.length > 0){
             return res.status(401).json("Password already updated")
         }
@@ -155,7 +152,7 @@ exports.registerCustomer = async (req, res)=>{
                 validationErrors: validateInput });
         }
         const {firstName, lastName, username, email, phoneNumber, password} = req.body
-        const [customer] = await db.execute("SELECT * FROM customers WHERE email =?", [email])
+        const [customer] = await db.execute("SELECT customer_id FROM customers WHERE email =?", [email])
         if(customer.length> 0){
             return res.status(400).json({message:"Customer already exist"})
         };
@@ -183,7 +180,8 @@ exports.logInCustomer =  async (req, res)=>{
             validationErrors :checkLoginInput
             })
         const {email, password} = req.body
-        const [customer] = await db.query("SELECT * FROM customers WHERE email = ?", [email])
+        const [customer] = await db.query(
+            "SELECT customer_id, username, password_hash FROM customers WHERE email = ?", [email])
         // check if customer exist
         if(!customer || customer.length === 0){
             return res.status(400).json({message:"Customer's email doesn't exist. Please register"}); 
@@ -199,16 +197,11 @@ exports.logInCustomer =  async (req, res)=>{
             userId:user.customer_id, 
             username:user.username,
         }
-
         const refreshCustomerPayload = {
             userId:user.customer_id,
         }
-
         const customerToken = generateJWToken.accessToken(payload)
-
-        const refreshToken = generateJWToken.refreshToken(
-            refreshCustomerPayload
-        )
+        const refreshToken = generateJWToken.refreshToken(refreshCustomerPayload)
         //drop any previous cookie
         res.clearCookie('customer_token'); 
         //setting up new cookie 
@@ -248,7 +241,7 @@ exports.changeCustomerPassword = async(req, res)=>{
         //generate new password
         const salt = await bcrypt.genSalt(10)
         const hashedPassword = await bcrypt.hash(newPassword, salt)
-        const [checkIfPasswordUpdated] = await db.query("SELECT * FROM customers WHERE password_hash=?", [hashedPassword])
+        const [checkIfPasswordUpdated] = await db.query("SELECT password_hash FROM customers WHERE password_hash=?", [hashedPassword])
         if(checkIfPasswordUpdated.length > 0){
             return res.status(401).json("Password already updated")
         }
@@ -265,7 +258,6 @@ exports.changeCustomerPassword = async(req, res)=>{
         err:err.stack})
     }
  }
- 
 exports.getCustomerUsername = async (req, res)=>{
     try{
         const customerUsername = req.username
@@ -286,14 +278,13 @@ exports.getCustomerUsername = async (req, res)=>{
             err:err.stack})
     }
 }
-
-exports.CustomerAppointment = async (req, res)=>{
+exports.customerAppointment = async (req, res)=>{
     const userId = req.userId 
     if(!userId){
         return res.status(403).json({message:"Access denied. Kindly register"})
     }
     try{
-        const [checkCustomer] = await db.query("SELECT * FROM customers WHERE customer_id=?", [userId])
+        const [checkCustomer] = await db.query("SELECT customer_id FROM customers WHERE customer_id=?", [userId])
         if(checkCustomer.length === 0){
             return res.status(403).json({message:"No record found"})
         }
@@ -370,7 +361,7 @@ exports.updateCustomerProfile = async (req, res)=>{
             updateFirstName, updateLastName,
             updateEmail, updatePhoneNumber  } = req.body
         const [queryCustomer] = await db.query(`
-            SELECT * FROM customers WHERE customer_id = ?`, [userId])
+            SELECT customer_id FROM customers WHERE customer_id = ?`, [userId])
         if(!queryCustomer || queryCustomer.length === 0) return 'Invalid customer'
         await db.query(`
             UPDATE customers 
@@ -411,7 +402,7 @@ exports.createServices = async (req, res)=>{
 }
 
 exports.viewServices = async (req, res)=>{
-    const [getSerivices] = await db.query("SELECT * FROM services")
+    const [getSerivices] = await db.query("SELECT hair_style, price FROM services")
     return res.status(200).send(getSerivices)
 }
 // stylist logic
@@ -451,7 +442,8 @@ exports.loginStylist = async (req, res)=>{
                 validationErrors: checkStylistLoginInput });
         }
         const {email, password} = req.body
-        const [checkStylist] = await db.query("SELECT * FROM stylists WHERE email = ?", [email])
+        const [checkStylist] = await db.query(
+            "SELECT stylist_id, username, password_hash FROM stylists WHERE email = ?", [email])
         if(checkStylist.length === 0){
             return res.status(403).json({message:"Invalid stylist"})
         }
@@ -465,14 +457,11 @@ exports.loginStylist = async (req, res)=>{
                 stylistId : stylistUser.stylist_id,
                 stylistUsername : stylistUser.username,
             }
-        
         const refreshStylistPayload = { stylistId : stylistUser.stylist_id} 
         const stylistToken = generateJWToken.accessToken(payload)
-        
         const refreshToken = generateJWToken.refreshToken(
             refreshStylistPayload
         )
-        
         //drop any previous cookie
         res.clearCookie('stylist_token'); 
         //setting up new cookie 
@@ -515,7 +504,7 @@ exports.changeStylistPassword = async(req, res)=>{
         //generate new password
         const salt = await bcrypt.genSalt(10)
         const hashedPassword = await bcrypt.hash(newPassword, salt)
-        const [checkIfPasswordUpdated] = await db.query("SELECT * FROM stylists WHERE password_hash=?", [hashedPassword])
+        const [checkIfPasswordUpdated] = await db.query("SELECT password_hash FROM stylists WHERE password_hash=?", [hashedPassword])
         if(checkIfPasswordUpdated.length > 0){
             return res.status(401).json("Password already updated")
         }
@@ -532,15 +521,11 @@ exports.changeStylistPassword = async(req, res)=>{
         err:err.stack})
     }
  }
- 
 exports.getStylistsUsername = async (req, res)=>{
     try{
         const stylistUsername = req.stylistUsername
         if(!stylistUsername) return res.status(401).json({message: 'Cannot tell you!'})
-        const [getStylist] = await db.query(`
-            SELECT *
-                FROM stylists
-                WHERE username = ?`,
+        const [getStylist] = await db.query(`SELECT username FROM stylists WHERE username = ?`,
             [stylistUsername])
         if(getStylist.length === 0){
             return res.status(401).json({message: 'Stylist username does not exist'})
@@ -553,13 +538,12 @@ exports.getStylistsUsername = async (req, res)=>{
             err:err.stack})
     }
 }
-
 exports.stylistAppointment = async (req, res)=>{
     try{
         const stylistId = req.stylistId
         if(!stylistId) return res.status(401).json({message: "Sorry!, It's personal information"})
         const [checkStylist] = await db.query(`
-            SELECT *
+            SELECT stylist_id
                 FROM stylists
                 WHERE stylist_id = ?`,
             [stylistId])
@@ -633,6 +617,32 @@ exports.viewStylists = async (req, res)=>{
         return res.status(500).json({message:"Error fetching stylists", err:err.stack})
     }    
 }
+exports.updateStylistProfile = async (req, res)=>{
+    try{
+        const checkStylistUpdateInput = await checkValidationResult(req)
+        if(checkStylistUpdateInput){
+            return res.status(400).json({ 
+                message: 'Please correct input errors', 
+                validationErrors: checkStylistUpdateInput });
+        }
+        const stylistId = req.stylistId;
+        const {
+            updateFirstName, updateLastName,
+            updateEmail, updatePhoneNumber, updateSpecialization  } = req.body
+        const [queryStylist] = await db.query(`
+            SELECT stylist_id, first_name FROM stylists WHERE stylist_id = ?`, [stylistId])
+        if(!queryStylist || queryStylist.length === 0) return 'Invalid stylist'
+        await db.query(`
+            UPDATE stylists 
+            SET first_name = ?, last_name = ?, email = ?,phone_number = ?, specialization = ?
+            WHERE stylist_id = ?`, 
+            [updateFirstName, updateLastName, updateEmail,updatePhoneNumber,updateSpecialization, stylistId])
+        return res.status(200).json({message: `Data updated successfully`})
+    }catch(err){
+        console.log(`Error Updating stylist data: ${err.message}`)
+        return res.status(500).json({message:`Failed to update stylist data`})
+    }
+}
 
 // refresh token logic
 exports.refreshJWTokens = async (req, res)=>{
@@ -654,7 +664,6 @@ exports.refreshJWTokens = async (req, res)=>{
                 return res.status(404).json({message: "Admin not found"})
             }
             const adminUser = checkAdmin[0]
-
             const adminPayload = {
                 adminId: adminUser.admin_id,
                 adminUsername: adminUser.username,
@@ -664,21 +673,17 @@ exports.refreshJWTokens = async (req, res)=>{
             res.cookie('admin_token', newAdminToken, {
                 httpOnly : true,
                 secure : process.env.NDDE_ENV === 'production',
-                sameSite : "Strict",
+                sameSite : process.env.NDDE_ENV === 'production' ? "None" : "Lax",
                 maxAge : 10 * 60 * 60
             })
         return res.status(200).json({message: "Refresh token successfully created"})
     }
         if(userId){
-            const [checkCustomer] = await db.query(`
-                SELECT customer_id, username
-                FROM customers
-                WHERE customer_id = ?`, [userId])
+            const [checkCustomer] = await db.query(`SELECT customer_id, username FROM customers WHERE customer_id = ?`, [userId])
             if(checkCustomer.length === 0){
                 return res.status(404).json({message: "Customer not found"})
             }
             const user = checkCustomer[0]
-
             const customerPayload = {
                 userId:user.customer_id, 
                 username:user.username,
@@ -701,7 +706,6 @@ exports.refreshJWTokens = async (req, res)=>{
                 return res.status(404).json({message: "Stylist not found"})
             }
             const stylistUser = checkStylist[0]
-
             const stylistPayload = {
                 stylistId : stylistUser.stylist_id,
                 stylistUsername : stylistUser.username,
@@ -735,14 +739,15 @@ exports.createAppointment = async (req, res) =>{
         const customerUsername = req.username
         const {stylistUsername,hairStyle, appointmentDate, appointmentTime, status} = req.body
         const userId = req.userId
-        const [queryCustomer] = await db.query('SELECT * FROM customers WHERE customer_id = ?', [userId])
-        const stylisUsername = stylistUsername
+        const [queryCustomer] = await db.query('SELECT customer_id FROM customers WHERE customer_id = ?', [userId])
+        
+        const stylisUsername = req.stylistUsername
         const [queryStylist] = await db.query("SELECT stylist_id FROM stylists WHERE username = ?", [stylisUsername])
         if(queryStylist.length === 0){
             return res.status(401).json({message:"Invalid stylist username"})
         }
         const [queryService] = await db.query(`
-            SELECT * 
+            SELECT hair_style
                 FROM services 
                 WHERE hair_style = ?`, 
                 [hairStyle]
@@ -753,7 +758,7 @@ exports.createAppointment = async (req, res) =>{
         //check existing Ap for data integrity
         const apCheckValue = queryCustomer[0].customer_id
         const [checkAppointment] = await db.query(`
-            SELECT * 
+            SELECT appointment_id, customer_id, appointment_date 
                 FROM 
                 appointments 
                 WHERE customer_id =? 
@@ -845,7 +850,7 @@ exports.createReview = async(req,res)=>{
         if(checkReviewInput){
             return res.status(401).json({
                 message:"Please fix error", 
-                validationErrors: checkAppointmentInput })
+                validationErrors: checkReviewInput })
         }
         const {hairStyle, rating, feedback} = req.body
         const userId = req.userId
@@ -880,7 +885,7 @@ exports.createReview = async(req,res)=>{
             res.status(401).json({message: 'Not a service you were offered'})
         }
         const [checkReview] = await db.query(`
-            SELECT * 
+            SELECT customer_id, service_id 
                 FROM reviews
                 WHERE customer_id = ? 
                 AND service_id = ?`,
@@ -957,8 +962,8 @@ exports.sendOtp = async (req, res)=>{
         res.cookie('jwtOtp', jwtOtp,
             {
                 httpOnly : true,
-                secure : false,
-                sameSite: 'Strict',
+                secure : process.env.NODE_ENV === 'production',
+                sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax' ,
                 maxAge : 5*60*1000 // 5mins duration
             }
         )

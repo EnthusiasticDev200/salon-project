@@ -38,9 +38,10 @@ const validateStylist =
     .notEmpty()
     .matches(/^\+?\d{10,15}$/) // length 10-15 and accepts country code
     .withMessage("Phone number must be 10 to 15 digits, and may start with '+'"),
-    check("password", "Password must contain letters, numbers and 6 or more characters long")
+    check("password", "Password must contain at least one upper and lowercase, symbol and number")
         .notEmpty()
-        .matches(/^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d]+$/)
+        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s])[A-Za-z\d\W]+$/
+)
         .isLength({min:6}),
     check("specialization", "Field is required").not().isEmpty().toLowerCase()
 ]
@@ -55,8 +56,10 @@ const validateCustomer =
     .notEmpty()
     .matches(/^\+?\d{10,15}$/) // length 10-15 and accepts country code
     .withMessage("Letters not allowed in phone number, but may start with '+'"),
-    check("password", "Must contain letters and numbers and 6 or more characters long")
-        .matches(/^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d]+$/)
+     check("password", "Password must contain at least one upper and lowercase, symbol and number")
+        .notEmpty()
+        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s])[A-Za-z\d\W]+$/
+)
         .isLength({min:6})
 ]
 
@@ -66,8 +69,9 @@ const validateLoginAndChangePassword =
    check("newPassword")
     .notEmpty().withMessage("Password is required")
     .isLength({ min: 6 }).withMessage("Password must be at least 6 characters long")
-    .matches(/^(?=.*[a-zA-Z])(?=.*\d).*$/)
-    .withMessage("Password must contain at least one letter and one number")
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s])[A-Za-z\d\W]+$/
+)
+    .withMessage("Password must contain at least one upper and lowercase, symbol and number")
 ]
 
 const validateAdmin = 
@@ -79,9 +83,10 @@ const validateAdmin =
     .matches(/^\+?\d{10,15}$/) // length 10-15 and accepts country code
     .withMessage("Phone number must be 10 to 15 digits, and may start with '+'"),
     check("role", "Field is required").notEmpty().toLowerCase(),
-    check("password", "Must contain letters,numbers and at least 6 or more characters")
+     check("password", "Password must contain at least one upper and lowercase, symbol and number")
         .notEmpty()
-        .matches(/^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d]+$/)
+        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s])[A-Za-z\d\W]+$/
+)
         .isLength({min:6})
 ]
 
