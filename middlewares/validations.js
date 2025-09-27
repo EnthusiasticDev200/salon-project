@@ -1,7 +1,7 @@
-
-const {check} = require("express-validator")
+const {check} = require("express-validator");
 
 const today = new Date().toISOString().split("T")[0]; // removes time format from date
+const convertToDate = new Date(today)
 
 // validatio logic
 const validateAppointment =
@@ -130,12 +130,23 @@ const validateCustomerUpdate =
     .notEmpty()
     .matches(/^\+?\d{10,15}$/) // length 10-15 and accepts country code
     .withMessage("Phone number must be 10 to 15 digits, and may start with '+'"),
+]  
+const validateStylistUpdate = 
+[
+    check('updateFirstName', 'Field is required').notEmpty().toLowerCase(),
+    check('updateLastName', 'Field required').notEmpty().toLowerCase(),
+    check("updateEmail", "Must be a valid email").notEmpty().isEmail(),
+    check("updatePhoneNumber", "Phone number is required")
+    .notEmpty()
+    .matches(/^\+?\d{10,15}$/) // length 10-15 and accepts country code
+    .withMessage("Phone number must be 10 to 15 digits, and may start with '+'"),
+    check('updateSpecialization', 'Field is required').notEmpty().toLowerCase(),
 ]   
 module.exports = 
 {
     validateAppointment, validateLoginAndChangePassword, 
     validateEmail,validateOtp, validateService,
-    validateStylist, 
+    validateStylist, validateStylistUpdate,
     validateCustomer, validateCustomerUpdate,
     validateAdmin, validateReview
 
