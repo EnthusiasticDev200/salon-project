@@ -18,6 +18,7 @@ async function checkValidationResult(req){
 }
 exports.registerAdmin = async (req, res) =>{
     try{
+        const apiStart = performance.now()
         const checkAdminInput = await checkValidationResult(req)
         if(checkAdminInput){
             return res.status(400).json(
@@ -25,14 +26,22 @@ exports.registerAdmin = async (req, res) =>{
                   validationErrors: checkAdminInput });
         }
         const {username, email, phoneNumber, role, password} = req.body
+        const beforeDb = performance.now()
         const [checkAdmin] = await db.execute("SELECT admin_id FROM admins WHERE email =?", [email])
+        const afterDb = performance.now() - beforeDb
+        console.log("After query admin reg result", afterDb + 'ms')
         if(checkAdmin.length> 0){
             return res.status(400).json({message:"Admin already exist"})
         };
+        const beforeHash = performance.now()
         const hashedPassword = await bcrypt.hash(password, 10)
+        const afterHash = performance.now() - beforeHash
+        console.log("After hash admin reg result:", afterHash + 'ms')
         await db.query
         (`INSERT INTO admins(username, email, phone_number, role, password_hash) VALUE(?,?,?,?,?)`,
         [username, email, phoneNumber, role, hashedPassword])
+        const apiEnd = performance.now() - apiStart
+        console.log("apiEnd admin reg result:", apiEnd + 'ms')
         return res.status(201).json({message:"Admin successfully created"});
     }catch(err){
         console.error("Registeration error: ", err)
@@ -43,22 +52,32 @@ exports.registerAdmin = async (req, res) =>{
 }
 exports.logInAdmin = async (req, res)=>{
     try{
+        const apiStart = performance.now()
+        const preValidation = performance.now()
         const checkAdminLoginInput = await checkValidationResult(req)
+        const postValidation = performance.now() - preValidation
+        console.log("after input validation", postValidation + 'ms')
         if(checkAdminLoginInput) return res.status(400).json(
             {
                 message: 'Please fix input error',
                 validationErrors: checkAdminLoginInput
             })
         const {email, password} = req.body
+        const beforeDb = performance.now()
         const [checkAdmin] = await db.query(
             `SELECT admin_id, username, role, password_hash 
                 FROM admins 
             WHERE email = ?
             `, [email])
+        const afterDb = performance.now() - beforeDb
+        console.log("After query result", afterDb + 'ms')
         if(checkAdmin.length === 0){
             return res.status(403).json({message:"Not an admin"})
         }
+        const beforeHash = performance.now()
         const comfirmPassword = await bcrypt.compare(password, checkAdmin[0].password_hash)
+        const afterHash = performance.now() - beforeHash
+        console.log("After hash admin login result:", afterHash + 'ms')
         if(!comfirmPassword){
             return res.status(401).json({message:"Invalid password"})
         }
@@ -91,6 +110,8 @@ exports.logInAdmin = async (req, res)=>{
                 sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
                 maxAge : 24 * 60 * 1000
             })
+        const apiEnd = performance.now() - apiStart
+        console.log("apiEnd admin login result:", apiEnd + 'ms')
         return res.status(200).json({message:`Welcome ${checkAdmin[0].username}`})
     }catch(err){
         console.error("Error logging in admin", err)
@@ -145,6 +166,7 @@ exports.changeAdminPassword = async(req, res)=>{
 // all about customer
 exports.registerCustomer = async (req, res)=>{
     try{
+        const apiStart = performance.now()
         const validateInput = await checkValidationResult(req)
         if(validateInput){
             return res.status(400).json({ 
@@ -152,17 +174,25 @@ exports.registerCustomer = async (req, res)=>{
                 validationErrors: validateInput });
         }
         const {firstName, lastName, username, email, phoneNumber, password} = req.body
+        const beforeDb = performance.now()
         const [customer] = await db.execute("SELECT customer_id FROM customers WHERE email =?", [email])
+        const afterDb = performance.now() - beforeDb
+        console.log("After query cus reg result", afterDb + 'ms')
         if(customer.length> 0){
             return res.status(400).json({message:"Customer already exist"})
         };
+        const beforeHash = performance.now()
         const hashedPassword = await bcrypt.hash(password, 10)
+        const afterHash = performance.now() - beforeHash
+        console.log("After hash cus reg result:", afterHash + 'ms')
         await db.query(`
             INSERT INTO 
                 customers(first_name, last_name, username, email, phone_number, password_hash) 
                 VALUE(?,?,?,?,?,?)`,
                 [firstName, lastName, username, email, phoneNumber, hashedPassword]
         )
+        const apiEnd = performance.now() - apiStart
+        console.log("Api end cus reg result:", apiEnd + 'ms')
         return res.status(201).json({message:"Customer successfully created"});
     }catch(err){
         console.log('Registeration failed: ', err.message)
@@ -174,19 +204,26 @@ exports.registerCustomer = async (req, res)=>{
 // customer login AND authentication with jwt(06/4/25)
 exports.logInCustomer =  async (req, res)=>{
     try{
+        const apiStart = performance.now()
         const checkLoginInput = await checkValidationResult(req)
         if(checkLoginInput) return res.status(400).json({
             message: 'Please fix input error',
             validationErrors :checkLoginInput
             })
         const {email, password} = req.body
+        const beforeDb = performance.now()
         const [customer] = await db.query(
             "SELECT customer_id, username, password_hash FROM customers WHERE email = ?", [email])
+        const afterDb = performance.now() - beforeDb
+        console.log("After query cus lgoin result", afterDb + 'ms') 
         // check if customer exist
         if(!customer || customer.length === 0){
             return res.status(400).json({message:"Customer's email doesn't exist. Please register"}); 
         }
+        const beforeHash = performance.now()
         const passwordMatch = await bcrypt.compare(password,customer[0].password_hash)
+        const afterHash = performance.now() - beforeHash
+        console.log("After hash login cus result:", afterHash + 'ms')
         if(!passwordMatch){
             return res.status(401).json({message:'Invalid password'})
         }
@@ -219,6 +256,8 @@ exports.logInCustomer =  async (req, res)=>{
                 sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
                 maxAge : 24 * 60 * 1000
             })
+        const apiEnd = performance.now() - apiStart
+        console.log("Api cus login result:", apiEnd + 'ms')
         return res.status(200).json({message:`Login successful. Welcome ${user.username}`})
     }catch(err){
         console.error("Error during customer login", err)
@@ -408,6 +447,7 @@ exports.viewServices = async (req, res)=>{
 // stylist logic
 exports.registerStylist = async (req, res)=>{   
     try{
+        const apiStart = performance.now()
         const checkStylistInput = await checkValidationResult(req)
         if(checkStylistInput){
             return res.status(400).json({
@@ -415,17 +455,25 @@ exports.registerStylist = async (req, res)=>{
                 validationErrors: checkStylistInput})
         }
         const {firstName, lastName, username, email, phoneNumber, password, specialization} = req.body
+        const beforeDb = performance.now()
         const [checkStylist] = await db.execute("SELECT email FROM stylists WHERE email =?", [email])
+        const afterDb = performance.now() - beforeDb
+        console.log("After db stylist reg result:", afterDb + 'ms')
         if(checkStylist.length> 0){
             return res.status(400).json({message:"STylist already exist"})
     };
+        const beforeHash = performance.now()
         const hashedPassword = await bcrypt.hash(password, 10)
+        const afterHash = performance.now() - beforeHash
+        console.log("After hash stylist reg result:", afterHash + 'ms')
         await db.query(`
             INSERT INTO 
                 stylists(first_name, last_name, username, email, phone_number, password_hash, specialization) 
                 VALUE(?,?,?,?,?,?,?)`,
                 [firstName, lastName, username, email, phoneNumber, hashedPassword, specialization]
-        )    
+        )   
+        const apiEnd = performance.now() - apiStart
+        console.log("Api stylist reg result:", apiEnd + 'ms') 
         return res.status(201).json({message:"Stylist successfully created"});
     }catch(err){
         return res.status(500).json({
@@ -435,6 +483,7 @@ exports.registerStylist = async (req, res)=>{
 }
 exports.loginStylist = async (req, res)=>{
     try{
+        const apiStart = performance.now()
         const checkStylistLoginInput = await checkValidationResult(req)
         if(checkStylistLoginInput){
             return res.status(400).json({ 
@@ -442,12 +491,18 @@ exports.loginStylist = async (req, res)=>{
                 validationErrors: checkStylistLoginInput });
         }
         const {email, password} = req.body
+        const beforeDb = performance.now()
         const [checkStylist] = await db.query(
             "SELECT stylist_id, username, password_hash FROM stylists WHERE email = ?", [email])
+        const afterDb = performance.now() - beforeDb
+        console.log("afterDb stylist login result:", afterDb + 'ms') 
         if(checkStylist.length === 0){
             return res.status(403).json({message:"Invalid stylist"})
         }
+        const beforeHash = performance.now()
         const comfirmPassword = await bcrypt.compare(password, checkStylist[0].password_hash)
+        const afterHash = performance.now() - beforeHash
+        console.log("after hash stylist login result:", afterHash + 'ms') 
         if(!comfirmPassword){
             return res.status(401).json({message:"Invalid password"})
         }
@@ -479,6 +534,8 @@ exports.loginStylist = async (req, res)=>{
                 sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
                 maxAge : 24 * 60 * 1000
             })
+        const apiEnd = performance.now() - apiStart
+        console.log("Api stylist login result:", apiEnd + 'ms') 
         return res.status(200).json({message: `Welcome ${checkStylist[0].username}`})
     }catch(err){
         console.error('Error log in stylist', err)
