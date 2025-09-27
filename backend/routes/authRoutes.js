@@ -9,7 +9,8 @@ const
     validateStylist,
     validateCustomer, validateCustomerUpdate,
     validateAdmin,
-    validateReview
+    validateReview,
+    validateStylistUpdate
 
 } = require("../../middlewares/validations")
 
@@ -19,11 +20,12 @@ const
     registerAdmin, logInAdmin,logoutAdmin,changeAdminPassword,
 
     registerCustomer, logInCustomer, customerProfile,logoutCustomer,
-    viewCustomers,getCustomerUsername, changeCustomerPassword,CustomerAppointment,
+    viewCustomers,getCustomerUsername, changeCustomerPassword,customerAppointment,
     updateCustomerProfile,
 
     registerStylist,loginStylist, logoutStylist,viewStylists,
     getStylistsUsername, stylistProfile, changeStylistPassword, stylistAppointment,
+    updateStylistProfile,
 
     createServices,viewServices,
     createAppointment, viewAppointments,
@@ -48,7 +50,7 @@ router.put('/customer/updatepassword', strictLimiter,validateLoginAndChangePassw
 router.get('/customer/me', mildLimiter,authenticateJWT, getCustomerUsername)
 router.patch('/customer/profile/update', strictLimiter,validateCustomerUpdate, authenticateJWT, updateCustomerProfile)
 router.get('/customer/profile', mildLimiter,authenticateJWT, customerProfile)
-router.get("/customer/appointment", mildLimiter,authenticateJWT, CustomerAppointment) 
+router.get("/customer/appointment", mildLimiter,authenticateJWT, customerAppointment) 
 router.get('/customer/profile/logout', mildLimiter,authenticateJWT,logoutCustomer)
 router.get('/customer/view', mildLimiter,authenticateJWT,requireSuperuser, viewCustomers)
 
@@ -66,6 +68,8 @@ router.get("/stylist/appointment",mildLimiter, authenticateJWT, stylistAppointme
 router.get('/stylist/me', mildLimiter,authenticateJWT,getStylistsUsername)
 router.get('/stylist/logout', mildLimiter,authenticateJWT,logoutStylist)
 router.get('/stylist/view',mildLimiter, authenticateJWT, viewStylists)
+router.patch('/stylist/profile/update', strictLimiter,validateStylistUpdate, authenticateJWT, updateStylistProfile)
+
 
 // refresh token endpoint
 router.post('/token/refresh', mildLimiter, validateRefreshJWToken, refreshJWTokens )
