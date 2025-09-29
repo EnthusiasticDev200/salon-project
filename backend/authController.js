@@ -5,6 +5,7 @@ const { validationResult } = require("express-validator")
 const { notifyStylist, notifyCustomer } = require('./socketHandler');
 const {sendOtpEmail} = require('../utils/mailer')
 const generateJWToken = require('../utils/token')
+const redis = require('../backend/redis')
 
 dotenv.config()
 
@@ -53,42 +54,74 @@ exports.registerAdmin = async (req, res) =>{
 exports.logInAdmin = async (req, res)=>{
     try{
         const apiStart = performance.now()
-        const preValidation = performance.now()
+       
         const checkAdminLoginInput = await checkValidationResult(req)
-        const postValidation = performance.now() - preValidation
-        console.log("after input validation", postValidation + 'ms')
+       
         if(checkAdminLoginInput) return res.status(400).json(
             {
                 message: 'Please fix input error',
                 validationErrors: checkAdminLoginInput
             })
         const {email, password} = req.body
-        const beforeDb = performance.now()
-        const [checkAdmin] = await db.query(
+        // hit redis
+        let cachedAdmin = await redis.get(`email:${email}`)
+        let admin;
+        if(cachedAdmin){
+            admin = JSON.parse(cachedAdmin) // retrieve from redis
+            console.log('parsed admin info', admin)
+        }else{
+            //hit db on miss
+            const beforeDb = performance.now()
+            const [checkAdmin] = await db.query(
             `SELECT admin_id, username, role, password_hash 
                 FROM admins 
             WHERE email = ?
             `, [email])
-        const afterDb = performance.now() - beforeDb
-        console.log("After query result", afterDb + 'ms')
-        if(checkAdmin.length === 0){
-            return res.status(403).json({message:"Not an admin"})
+            const afterDb = performance.now() - beforeDb
+            console.log("After query result", afterDb + 'ms')
+            if(checkAdmin.length === 0) return res.status(403).json({message:"Not an admin"});
+            // capture admin db info
+            const adminUser = checkAdmin[0]
+            console.log('isAdmin:', adminUser)
+            const adminData = {
+                adminId : adminUser.admin_id,
+                adminUsername: adminUser.username,
+                role : adminUser.role
+            }
+            // update redis
+            await redis.set(
+                `email:${email}`,
+                JSON.stringify(adminData),
+                `EX`,
+                20 * 60 // 20mins
+            )
+            // admin now has cloned adminData
+            admin = {...adminData, password_hash: adminUser.password_hash} 
+            console.log('admin cloned', admin)
         }
+        if(!admin.password_hash){
+            // hit db for password
+            const [adminPassword] = await db.query(`SELECT password_hash FROM admins WHERE email = ?`, [email])
+            admin.password_hash = adminPassword[0].password_hash//update admin
+        }
+       
         const beforeHash = performance.now()
-        const comfirmPassword = await bcrypt.compare(password, checkAdmin[0].password_hash)
+        console.log('admin pw hash', admin.password_hash)
+        const comfirmPassword = await bcrypt.compare(password, admin.password_hash)
         const afterHash = performance.now() - beforeHash
         console.log("After hash admin login result:", afterHash + 'ms')
         if(!comfirmPassword){
             return res.status(401).json({message:"Invalid password"})
         }
-        const adminUser = checkAdmin[0]
         const payload =  
             {
-                adminId: adminUser.admin_id,
-                adminUsername: adminUser.username,
-                role: adminUser.role,
+                adminId: admin.adminId,
+                adminUsername: admin.adminUsername,
+                role: admin.role,
             }
-        const refreshAdminPayload = {adminId: adminUser.admin_id}
+        console.log('admin Payload', payload)
+        console.log('all from admin', admin)
+        const refreshAdminPayload = {adminId: admin.adminId}
         const adminToken = generateJWToken.accessToken(payload)
         const refreshToken = generateJWToken.refreshToken(
             refreshAdminPayload
@@ -112,7 +145,7 @@ exports.logInAdmin = async (req, res)=>{
             })
         const apiEnd = performance.now() - apiStart
         console.log("apiEnd admin login result:", apiEnd + 'ms')
-        return res.status(200).json({message:`Welcome ${checkAdmin[0].username}`})
+        return res.status(200).json({message:`Welcome ${admin.adminUsername}`})
     }catch(err){
         console.error("Error logging in admin", err)
         return res.status(500).json({
@@ -1003,26 +1036,18 @@ exports.sendOtp = async (req, res)=>{
                 checkStylistEmail.length == 0
             ) return res.status(401).json({message : 'Invalid email'})  
         // create four digits otp
-        const otp = Math.floor(1000 + Math.random() * 9000).toString()
+        const otp = Math.floor(100000 + Math.random() * 900000).toString()
+        console.log(otp)
         const otpPayload = {
-            email,
-            otp,
-            type : 'otp'
+            otp : otp,
+            email : email
         }
-        // implement JWT
-        const jwtOtp = jwt.sign(
-            otpPayload, 
-            process.env.JWT_SECRET,
-            {expiresIn : '5m'}
-        )
-        // store jwt contents in cookie
-        res.cookie('jwtOtp', jwtOtp,
-            {
-                httpOnly : true,
-                secure : process.env.NODE_ENV === 'production',
-                sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax' ,
-                maxAge : 5*60*1000 // 5mins duration
-            }
+        await redis.del( `email:${email}`) // remove latee
+        await redis.set(
+            `email:${email}`,
+            JSON.stringify(otpPayload),
+            'EX',
+            5 * 60 // 5mins
         )
         await sendOtpEmail(email, otp);
         return res.status(200).json({message:'OTP sent to your email'})
@@ -1034,7 +1059,7 @@ exports.sendOtp = async (req, res)=>{
         })
     }
 }
-exports.validateJwtOtp = async (req, res) =>{
+exports.verifyOtp = async (req, res) =>{
     try{
         const checkJwtOtpInput = await checkValidationResult(req)
         if(checkJwtOtpInput){
@@ -1042,16 +1067,20 @@ exports.validateJwtOtp = async (req, res) =>{
                 message:"Please fix error", 
                 validationErrors:checkJwtOtpInput })
         }
-        const { enteredOtp} = req.body
-        //ensuring proper otp decoding
-        if(!req.jwtOtp || req.jwtOtp.type !== 'otp'){
-            return res.status(401).json({message: 'Not an OTP token'})
+        const { email, enteredOtp } = req.body
+        let cachedOtp = await redis.get(`email:${email}`)
+        let otp
+        if(!cachedOtp){
+            return res.status(401).json({message: 'OTP not recognized'})
         }
-        // checking if otp match
-        if(req.jwtOtp.otp !== enteredOtp)
-            {
-                return res.status(401).json({message: 'Invalid or expired OTP'})
-            } 
+        if(cachedOtp){
+            otp = JSON.parse(cachedOtp)
+            console.log('retrieved otp', otp)
+        }
+        if(email !== otp.email) return res.status(401).json({
+            message: " Email mismatch"})
+        if(enteredOtp !== otp.otp) return res.status(401).json({
+            message: "Invalid or expired OTP"})
         return res.status(200).json({message: 'OTP verification succesful'})
     }catch(err){
         console.log("Error occured validating otp", err)
