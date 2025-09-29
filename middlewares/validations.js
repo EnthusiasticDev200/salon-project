@@ -106,9 +106,9 @@ const validateOtp =
 [
     check('enteredOtp')
     .notEmpty().withMessage('OTP is required')
-    .matches(/^\d{4}$/).withMessage("Wrong OTP") // ensures digits (0-9) no symbols or alpha
-    .isLength({min:4, max:4})
-    .withMessage("Beyond expected number required") 
+    .matches(/^\d{6}$/).withMessage("Wrong OTP") // ensures digits (0-9) no symbols or alpha
+    .isLength({min:6, max:6})
+    .withMessage("Unrecongized OTP") 
 ]
 
 const validateService = 

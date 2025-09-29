@@ -94,5 +94,5 @@ const customerOnly = async (req, res, next)=>{
 
 module.exports = {
     authenticateJWT, validateRefreshJWToken,
-    requireSuperuser, verifyOtp, customerOnly
+    requireSuperuser, customerOnly
     } //using named export
