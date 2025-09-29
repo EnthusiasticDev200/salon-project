@@ -175,14 +175,20 @@ exports.changeAdminPassword = async(req, res)=>{
             validationErrors : checkAdminPWInput
         })
         const {email, newPassword} = req.body
-        const jwtOtpEmail = req.jwtOtp.email
-        //check if email and jwtEmail match
-        if(jwtOtpEmail !== email){
-            return res.status(401).json({message:'OTP verification required'})
+        const cachedOtp = await redis.get(`email:${email}`)
+        //validate cachedEmail and email 
+        if(!cachedOtp){
+           return res.status(401).json({message:'OTP verification required'})
         }
+        const otp = JSON.parse(cachedOtp)
+        if(email !== otp.email) return res.status(401).json({message: "Email mismatch"})
+        if(!otp.verified) return res.status(401).json({message: "OTP not yet verified"})
         //generate new password
+        const beforeHash = performance.now()
         const salt = await bcrypt.genSalt(10)
         const hashedPassword = await bcrypt.hash(newPassword, salt)
+        const afterHash = performance.now() - beforeHash
+        console.log("After hash in adminChangePW", afterHash)
         const [checkIfPasswordUpdated] = await db.query("SELECT password_hash FROM admins WHERE password_hash=?", [hashedPassword])
         if(checkIfPasswordUpdated.length > 0){
             return res.status(401).json("Password already updated")
@@ -305,14 +311,20 @@ exports.changeCustomerPassword = async(req, res)=>{
             validationErrors : checkChangePWInput
         })
         const {email, newPassword} = req.body
-        const jwtOtpEmail = req.jwtOtp.email
-        //check if email and jwtEmail match
-        if(jwtOtpEmail !== email){
-            return res.status(401).json({message:'OTP verification required'})
+        const cachedOtp = await redis.get(`email:${email}`)
+        //validate cachedEmail and email 
+        if(!cachedOtp){
+           return res.status(401).json({message:'OTP verification required'})
         }
+        const otp = JSON.parse(cachedOtp)
+        if(email !== otp.email) return res.status(401).json({message: "Email mismatch"})
+        if(!otp.verified) return res.status(401).json({message: "OTP not yet verified"})
         //generate new password
+        const beforeHash = performance.now() 
         const salt = await bcrypt.genSalt(10)
         const hashedPassword = await bcrypt.hash(newPassword, salt)
+        const afterHash = performance.now() - beforeHash
+        console.log("After hash in cusChangePW", afterHash)
         const [checkIfPasswordUpdated] = await db.query("SELECT password_hash FROM customers WHERE password_hash=?", [hashedPassword])
         if(checkIfPasswordUpdated.length > 0){
             return res.status(401).json("Password already updated")
@@ -586,14 +598,20 @@ exports.changeStylistPassword = async(req, res)=>{
                 validationErrors: checkPasswordInput });
         }
         const {email, newPassword} = req.body
-        const jwtOtpEmail = req.jwtOtp.email
-        //validate jwtOtpEmail and email 
-        if(jwtOtpEmail !== email){
-            return res.status(401).json({message:'OTP verification required'})
+        const cachedOtp = await redis.get(`email:${email}`)
+        //validate cachedEmail and email 
+        if(!cachedOtp){
+           return res.status(401).json({message:'OTP verification required'})
         }
+        const otp = JSON.parse(cachedOtp)
+        if(email !== otp.email) return res.status(401).json({message: "Email mismatch"})
+        if(!otp.verified) return res.status(401).json({message: "OTP not yet verified"})
         //generate new password
+        const beforeHash = performance.now()
         const salt = await bcrypt.genSalt(10)
         const hashedPassword = await bcrypt.hash(newPassword, salt)
+        const afterHash = performance.now() - beforeHash
+        console.log("After hash in atyliatChangePW", afterHash)
         const [checkIfPasswordUpdated] = await db.query("SELECT password_hash FROM stylists WHERE password_hash=?", [hashedPassword])
         if(checkIfPasswordUpdated.length > 0){
             return res.status(401).json("Password already updated")
@@ -603,6 +621,8 @@ exports.changeStylistPassword = async(req, res)=>{
             SET password_hash =? 
             WHERE email = ?`, 
             [hashedPassword, email])
+        // delete otp
+        await redis.del(`email:${email}`)
         return res.status(201).json({message:"Passwword updated succesfully"})
     }catch(err){
      console.error("Error updating stylist password", err)
@@ -1022,11 +1042,14 @@ exports.sendOtp = async (req, res)=>{
         }
         const {email} = req.body
         // hitting db in parallel with Promise
+        const beforeDb = performance.now()
         const [adminRes, customerRes, stylistRes] = await Promise.all([
             db.query(`SELECT email FROM admins WHERE email = ?`, [email]),
             db.query(`SELECT email FROM customers WHERE email = ?`, [email]),
             db.query(`SELECT email FROM stylists WHERE email = ?`, [email])
         ])
+        const afterDb = performance.now()-beforeDb 
+        console.log("After db execution on sendOtp:", afterDb)
         const [checkAdminEmail] = adminRes;
         const [checkCustomerEmail] = customerRes;
         const [checkStylistEmail] = stylistRes
@@ -1037,19 +1060,21 @@ exports.sendOtp = async (req, res)=>{
             ) return res.status(401).json({message : 'Invalid email'})  
         // create four digits otp
         const otp = Math.floor(100000 + Math.random() * 900000).toString()
-        console.log(otp)
         const otpPayload = {
             otp : otp,
-            email : email
+            email : email,
+            verified : false
         }
-        await redis.del( `email:${email}`) // remove latee
         await redis.set(
             `email:${email}`,
             JSON.stringify(otpPayload),
             'EX',
             5 * 60 // 5mins
         )
+        const beforeSendOtp = performance.now()
         await sendOtpEmail(email, otp);
+        const afterSendOtp = performance.now() - beforeSendOtp
+        console.log('Total time for sendOTP', afterSendOtp)
         return res.status(200).json({message:'OTP sent to your email'})
     }catch(err){
         console.log("Error occured while sending otp", err)
@@ -1067,20 +1092,20 @@ exports.verifyOtp = async (req, res) =>{
                 message:"Please fix error", 
                 validationErrors:checkJwtOtpInput })
         }
-        const { email, enteredOtp } = req.body
-        let cachedOtp = await redis.get(`email:${email}`)
+        const { enteredOtp } = req.body
+        const cachedOtp = await redis.get(`email:${email}`)
         let otp
         if(!cachedOtp){
-            return res.status(401).json({message: 'OTP not recognized'})
+            return res.status(401).json({message: 'OTP not sent to this email'})
         }
         if(cachedOtp){
             otp = JSON.parse(cachedOtp)
-            console.log('retrieved otp', otp)
         }
-        if(email !== otp.email) return res.status(401).json({
-            message: " Email mismatch"})
         if(enteredOtp !== otp.otp) return res.status(401).json({
             message: "Invalid or expired OTP"})
+        // update redis
+        otp.verified = true
+        await redis.set(`email:${email}`, JSON.stringify(otp))
         return res.status(200).json({message: 'OTP verification succesful'})
     }catch(err){
         console.log("Error occured validating otp", err)
