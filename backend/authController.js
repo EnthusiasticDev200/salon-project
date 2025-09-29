@@ -27,10 +27,12 @@ exports.registerAdmin = async (req, res) =>{
                   validationErrors: checkAdminInput });
         }
         const {username, email, phoneNumber, role, password} = req.body
+        
         const beforeDb = performance.now()
         const [checkAdmin] = await db.execute("SELECT admin_id FROM admins WHERE email =?", [email])
         const afterDb = performance.now() - beforeDb
         console.log("After query admin reg result", afterDb + 'ms')
+       
         if(checkAdmin.length> 0){
             return res.status(400).json({message:"Admin already exist"})
         };
@@ -38,11 +40,13 @@ exports.registerAdmin = async (req, res) =>{
         const hashedPassword = await bcrypt.hash(password, 10)
         const afterHash = performance.now() - beforeHash
         console.log("After hash admin reg result:", afterHash + 'ms')
+        
         await db.query
         (`INSERT INTO admins(username, email, phone_number, role, password_hash) VALUE(?,?,?,?,?)`,
         [username, email, phoneNumber, role, hashedPassword])
         const apiEnd = performance.now() - apiStart
         console.log("apiEnd admin reg result:", apiEnd + 'ms')
+        
         return res.status(201).json({message:"Admin successfully created"});
     }catch(err){
         console.error("Registeration error: ", err)
@@ -68,7 +72,6 @@ exports.logInAdmin = async (req, res)=>{
         let admin;
         if(cachedAdmin){
             admin = JSON.parse(cachedAdmin) // retrieve from redis
-            console.log('parsed admin info', admin)
         }else{
             //hit db on miss
             const beforeDb = performance.now()
@@ -77,12 +80,12 @@ exports.logInAdmin = async (req, res)=>{
                 FROM admins 
             WHERE email = ?
             `, [email])
+
             const afterDb = performance.now() - beforeDb
             console.log("After query result", afterDb + 'ms')
             if(checkAdmin.length === 0) return res.status(403).json({message:"Not an admin"});
             // capture admin db info
             const adminUser = checkAdmin[0]
-            console.log('isAdmin:', adminUser)
             const adminData = {
                 adminId : adminUser.admin_id,
                 adminUsername: adminUser.username,
@@ -97,20 +100,18 @@ exports.logInAdmin = async (req, res)=>{
             )
             // admin now has cloned adminData
             admin = {...adminData, password_hash: adminUser.password_hash} 
-            console.log('admin cloned', admin)
-        }
+        }   
+        // hit db for password
         if(!admin.password_hash){
-            // hit db for password
             const [adminPassword] = await db.query(`SELECT password_hash FROM admins WHERE email = ?`, [email])
             admin.password_hash = adminPassword[0].password_hash//update admin
         }
-       
+        
         const beforeHash = performance.now()
-        console.log('admin pw hash', admin.password_hash)
-        const comfirmPassword = await bcrypt.compare(password, admin.password_hash)
+        const confirmPassword = await bcrypt.compare(password, admin.password_hash)
         const afterHash = performance.now() - beforeHash
         console.log("After hash admin login result:", afterHash + 'ms')
-        if(!comfirmPassword){
+        if(!confirmPassword){
             return res.status(401).json({message:"Invalid password"})
         }
         const payload =  
@@ -119,8 +120,6 @@ exports.logInAdmin = async (req, res)=>{
                 adminUsername: admin.adminUsername,
                 role: admin.role,
             }
-        console.log('admin Payload', payload)
-        console.log('all from admin', admin)
         const refreshAdminPayload = {adminId: admin.adminId}
         const adminToken = generateJWToken.accessToken(payload)
         const refreshToken = generateJWToken.refreshToken(
@@ -175,13 +174,12 @@ exports.changeAdminPassword = async(req, res)=>{
             validationErrors : checkAdminPWInput
         })
         const {email, newPassword} = req.body
-        const cachedOtp = await redis.get(`email:${email}`)
+        const cachedOtp = await redis.get(`updateOtp:${email}`)
         //validate cachedEmail and email 
         if(!cachedOtp){
-           return res.status(401).json({message:'OTP verification required'})
+           return res.status(401).json({message:'OTP not sent to thhis email'})
         }
         const otp = JSON.parse(cachedOtp)
-        if(email !== otp.email) return res.status(401).json({message: "Email mismatch"})
         if(!otp.verified) return res.status(401).json({message: "OTP not yet verified"})
         //generate new password
         const beforeHash = performance.now()
@@ -194,6 +192,7 @@ exports.changeAdminPassword = async(req, res)=>{
             return res.status(401).json("Password already updated")
         }
         await db.query("UPDATE admins SET password_hash =? WHERE email = ?", [hashedPassword, email])
+        await redis.del(`updateOtp:${email}`)
         return res.status(201).json({message:"Passwword updated succesfully"})
     }catch(err){
         console.error("Error updating admin password", err)
@@ -311,13 +310,13 @@ exports.changeCustomerPassword = async(req, res)=>{
             validationErrors : checkChangePWInput
         })
         const {email, newPassword} = req.body
-        const cachedOtp = await redis.get(`email:${email}`)
+        // get stored OTP from Redis
+        const cachedOtp = await redis.get(`updateOtp:${email}`)
         //validate cachedEmail and email 
         if(!cachedOtp){
-           return res.status(401).json({message:'OTP verification required'})
+           return res.status(401).json({message:'OTP not sent to thhis email'})
         }
         const otp = JSON.parse(cachedOtp)
-        if(email !== otp.email) return res.status(401).json({message: "Email mismatch"})
         if(!otp.verified) return res.status(401).json({message: "OTP not yet verified"})
         //generate new password
         const beforeHash = performance.now() 
@@ -334,6 +333,7 @@ exports.changeCustomerPassword = async(req, res)=>{
             SET password_hash =? 
             WHERE email = ?`, 
             [hashedPassword, email])
+        await redis.del(`updateOtp:${email}`)
         return res.status(201).json({message:"Passwword updated succesfully"})
     }catch(err){
      console.error("Error updating customer password", err)
@@ -545,10 +545,10 @@ exports.loginStylist = async (req, res)=>{
             return res.status(403).json({message:"Invalid stylist"})
         }
         const beforeHash = performance.now()
-        const comfirmPassword = await bcrypt.compare(password, checkStylist[0].password_hash)
+        const confirmPassword = await bcrypt.compare(password, checkStylist[0].password_hash)
         const afterHash = performance.now() - beforeHash
         console.log("after hash stylist login result:", afterHash + 'ms') 
-        if(!comfirmPassword){
+        if(!confirmPassword){
             return res.status(401).json({message:"Invalid password"})
         }
         const stylistUser = checkStylist[0]
@@ -592,19 +592,19 @@ exports.loginStylist = async (req, res)=>{
 exports.changeStylistPassword = async(req, res)=>{
     try{
         const checkPasswordInput = await checkValidationResult(req)
-        if(inputErcheckPasswordInputrors){
+        if(checkPasswordInput){
             return res.status(400).json({ 
                 message: 'Please correct input errors',
                 validationErrors: checkPasswordInput });
         }
         const {email, newPassword} = req.body
-        const cachedOtp = await redis.get(`email:${email}`)
+        // get stored OTP on redis
+        const cachedOtp = await redis.get(`updateOtp:${email}`)
         //validate cachedEmail and email 
         if(!cachedOtp){
-           return res.status(401).json({message:'OTP verification required'})
+           return res.status(401).json({message:'OTP not sent to thhis email'})
         }
         const otp = JSON.parse(cachedOtp)
-        if(email !== otp.email) return res.status(401).json({message: "Email mismatch"})
         if(!otp.verified) return res.status(401).json({message: "OTP not yet verified"})
         //generate new password
         const beforeHash = performance.now()
@@ -622,7 +622,7 @@ exports.changeStylistPassword = async(req, res)=>{
             WHERE email = ?`, 
             [hashedPassword, email])
         // delete otp
-        await redis.del(`email:${email}`)
+        await redis.del(`updateOtp:${email}`)
         return res.status(201).json({message:"Passwword updated succesfully"})
     }catch(err){
      console.error("Error updating stylist password", err)
@@ -1065,8 +1065,9 @@ exports.sendOtp = async (req, res)=>{
             email : email,
             verified : false
         }
+        // store in Redis
         await redis.set(
-            `email:${email}`,
+            `otp:${email}`,
             JSON.stringify(otpPayload),
             'EX',
             5 * 60 // 5mins
@@ -1092,8 +1093,8 @@ exports.verifyOtp = async (req, res) =>{
                 message:"Please fix error", 
                 validationErrors:checkJwtOtpInput })
         }
-        const { enteredOtp } = req.body
-        const cachedOtp = await redis.get(`email:${email}`)
+        const { email, enteredOtp } = req.body
+        const cachedOtp = await redis.get(`otp:${email}`)
         let otp
         if(!cachedOtp){
             return res.status(401).json({message: 'OTP not sent to this email'})
@@ -1105,7 +1106,8 @@ exports.verifyOtp = async (req, res) =>{
             message: "Invalid or expired OTP"})
         // update redis
         otp.verified = true
-        await redis.set(`email:${email}`, JSON.stringify(otp))
+        await redis.set(`updateOtp:${email}`, JSON.stringify(otp), 'EX', 5 * 60)
+        await redis.del(`otp:${email}`) // delete unmodified otp
         return res.status(200).json({message: 'OTP verification succesful'})
     }catch(err){
         console.log("Error occured validating otp", err)
