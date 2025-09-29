@@ -91,20 +91,6 @@ const customerOnly = async (req, res, next)=>{
     if (!req.userId) return res.status(403).json({message:" Sorry! Strictly for customers"})
     next()
 }
-const verifyOtp = async (req, res,next) =>{
-    try{
-        const jwtOtp = req.cookies.jwtOtp
-        if(!jwtOtp) return res.status(401).json({message: 'No OTP token fond'})
-        const decoded = jwt.verify(jwtOtp, process.env.JWT_SECRET)
-        req.jwtOtp = decoded;
-        next() 
-    }catch(error){
-        console.log('OTP verification failed', error)
-        return res.status(500).json({message: 'Invalid or Expired OTP token'})
-    }
-   
-}
-
 
 module.exports = {
     authenticateJWT, validateRefreshJWToken,
