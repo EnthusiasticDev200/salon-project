@@ -39,12 +39,12 @@ const
 router.post('/admin/register', strictLimiter ,validateAdmin, registerAdmin)
 router.post('/admin/login',strictLimiter,logInAdmin)
 router.get("/admin/logout", mildLimiter,authenticateJWT,logoutAdmin)
-router.put('/admin/updatepassword', strictLimiter, validateLoginAndChangePassword,verifyOtp, changeAdminPassword)
+router.put('/admin/updatepassword', strictLimiter, validateLoginAndChangePassword, changeAdminPassword)
 
 //customer's endpoints
 router.post('/customer/register', strictLimiter, validateCustomer,registerCustomer)
 router.post('/customer/login',strictLimiter,logInCustomer)
-router.put('/customer/updatepassword', strictLimiter,validateLoginAndChangePassword, verifyOtp, changeCustomerPassword)
+router.put('/customer/updatepassword', strictLimiter,validateLoginAndChangePassword, changeCustomerPassword)
 
 //customer's protected routes
 router.get('/customer/me', mildLimiter,authenticateJWT, getCustomerUsername)
@@ -61,7 +61,7 @@ router.get('/service/view',mildLimiter,viewServices)
 // stylist endpoint 
 router.post('/stylist/register', strictLimiter,validateStylist,registerStylist)
 router.post('/stylist/login',strictLimiter,loginStylist)
-router.put('/stylist/updatepassword',strictLimiter, validateLoginAndChangePassword, verifyOtp, changeStylistPassword)
+router.put('/stylist/updatepassword',strictLimiter, validateLoginAndChangePassword, changeStylistPassword)
 
 router.get("/stylist/profile", mildLimiter, authenticateJWT, stylistProfile)
 router.get("/stylist/appointment",mildLimiter, authenticateJWT, stylistAppointment)
