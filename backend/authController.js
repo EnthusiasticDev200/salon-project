@@ -591,6 +591,7 @@ exports.loginStylist = async (req, res)=>{
 }
 exports.changeStylistPassword = async(req, res)=>{
     try{
+        const apiStart = performance.now()
         const checkPasswordInput = await checkValidationResult(req)
         if(checkPasswordInput){
             return res.status(400).json({ 
@@ -616,13 +617,18 @@ exports.changeStylistPassword = async(req, res)=>{
         if(checkIfPasswordUpdated.length > 0){
             return res.status(401).json("Password already updated")
         }
+        const beforeUpdate = performance.now()
         await db.query(`
             UPDATE stylists 
             SET password_hash =? 
             WHERE email = ?`, 
             [hashedPassword, email])
+        const afterUpdate = performance.now()- beforeUpdate
+        console.log('Total time for stylistPw update:', afterUpdate)
         // delete otp
         await redis.del(`updateOtp:${email}`)
+        const apiEnd = performance.now()- apiStart
+        console.log('Total apiEnd for stylistChangePw :', apiEnd)
         return res.status(201).json({message:"Passwword updated succesfully"})
     }catch(err){
      console.error("Error updating stylist password", err)
@@ -1034,6 +1040,7 @@ exports.viewReviews = async (req, res)=>{
 }
 exports.sendOtp = async (req, res)=>{
     try{
+        const apiStart = performance.now()
         const checkOtpInput = await checkValidationResult(req)
         if(checkOtpInput){
             return res.status(401).json({
@@ -1076,6 +1083,8 @@ exports.sendOtp = async (req, res)=>{
         await sendOtpEmail(email, otp);
         const afterSendOtp = performance.now() - beforeSendOtp
         console.log('Total time for sendOTP', afterSendOtp)
+        const apiEnd = performance.now() - apiStart
+        console.log('Total apiEnd for sendOTP', apiEnd)
         return res.status(200).json({message:'OTP sent to your email'})
     }catch(err){
         console.log("Error occured while sending otp", err)
