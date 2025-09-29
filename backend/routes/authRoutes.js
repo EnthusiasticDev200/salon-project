@@ -1,5 +1,5 @@
 const express = require('express')
-const {authenticateJWT, requireSuperuser, verifyOtp, customerOnly, validateRefreshJWToken} = require('../../middlewares/auth')
+const {authenticateJWT, requireSuperuser, customerOnly, validateRefreshJWToken} = require('../../middlewares/auth')
 const router = express.Router()
 const {strictLimiter, mildLimiter} = require('../../middlewares/rateLimiter')
 const 
@@ -30,7 +30,7 @@ const
     createServices,viewServices,
     createAppointment, viewAppointments,
     createReview,viewReviews,
-    sendOtp, validateJwtOtp,
+    sendOtp, verifyOtp,
     refreshJWTokens,
     
 } = require('../authController')
@@ -84,6 +84,6 @@ router.get("/review/view", mildLimiter, viewReviews)
 
 //otp enspoint
 router.post('/otp/send', strictLimiter,validateEmail,sendOtp)
-router.post('/otp/verify', strictLimiter, validateOtp, verifyOtp, validateJwtOtp)
+router.post('/otp/verify', strictLimiter, validateOtp, verifyOtp)
 
 module.exports = router
