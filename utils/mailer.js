@@ -1,24 +1,31 @@
-const nodemailer = require("nodemailer");
 require("dotenv").config();
+const nodemailer = require("nodemailer");
+const FormData = require('form-data')
+const Mailgun = require('mailgun.js')
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+
+const mailgun = new Mailgun(FormData)
+
+const mg = mailgun.client({
+  username : "api",
+  key : process.env.MAILGUN_API_KEY
+})
 
 const sendOtpEmail = async (toEmail, otp) => {
-  const mailOptions = {
-    from: `"KhleanCutz" <${process.env.EMAIL_USER}>`,
-    to: toEmail,
+  try{
+    const msg = await mg.messages.create(process.env.MAILGUN_DOMAIN,{
+    from: `"KhleanCutz" <postmaster@${process.env.MAILGUN_DOMAIN}>`,
+    to: [toEmail],
     subject: "Your OTP for Password Reset",
     html: `<h3>Hello from KhleanCutz!</h3><p>Your OTP is: <strong>${otp}</strong>. 
-        It expires in 5 minutes.</p>`,
-  };
-
-  await transporter.sendMail(mailOptions);
+        It expires in 5 minutes.</p>`
+  })
+    console.log("Email sent:",msg.id)
+  }catch(err){
+    console.log("Error sending email", err.stack)
+    throw err
+  }
+  
 };
 
 module.exports = { sendOtpEmail };
