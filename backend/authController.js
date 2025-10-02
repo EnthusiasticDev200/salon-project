@@ -6,6 +6,7 @@ const { notifyStylist, notifyCustomer } = require('./socketHandler');
 const {sendOtpEmail} = require('../utils/mailer')
 const generateJWToken = require('../utils/token')
 const redis = require('../backend/redis')
+const otpQueue = require('../utils/worker')
 
 dotenv.config()
 
@@ -1079,13 +1080,13 @@ exports.sendOtp = async (req, res)=>{
             'EX',
             5 * 60 // 5mins
         )
-        const beforeSendOtp = performance.now()
-        await sendOtpEmail(email, otp);
-        const afterSendOtp = performance.now() - beforeSendOtp
-        console.log('Total time for sendOTP', afterSendOtp)
+        const beforeOtpQueue = performance.now()
+        await otpQueue.add('send-otp-emails',{ email, otp }, { attempts: 3 }); // job name !=queue and worker
+        const afterOtpQueue = performance.now() - beforeOtpQueue
+        console.log('Total time for otpQueue', afterOtpQueue)
         const apiEnd = performance.now() - apiStart
         console.log('Total apiEnd for sendOTP', apiEnd)
-        return res.status(200).json({message:'OTP sent to your email'})
+        return res.status(200).json({message:'OTP will be sent to your email shortly'})
     }catch(err){
         console.log("Error occured while sending otp", err)
         return res.status(500).json({
