@@ -20,7 +20,7 @@ const sendOtpEmail = async (toEmail, otp) => {
     html: `<h3>Hello from KhleanCutz!</h3><p>Your OTP is: <strong>${otp}</strong>. 
         It expires in 5 minutes.</p>`
   })
-    console.log("Email sent:",msg.id)
+  
   }catch(err){
     console.log("Error sending email", err.stack)
     throw err
