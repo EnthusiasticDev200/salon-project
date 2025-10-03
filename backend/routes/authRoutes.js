@@ -38,7 +38,7 @@ const
 //admin's endpoints 
 router.post('/admin/register', strictLimiter ,validateAdmin, registerAdmin)
 router.post('/admin/login',strictLimiter,logInAdmin)
-router.get("/admin/logout", mildLimiter,authenticateJWT,logoutAdmin)
+router.post("/admin/logout", mildLimiter,authenticateJWT,logoutAdmin)
 router.put('/admin/updatepassword', strictLimiter, validateLoginAndChangePassword, changeAdminPassword)
 
 //customer's endpoints
@@ -51,7 +51,7 @@ router.get('/customer/me', mildLimiter,authenticateJWT, getCustomerUsername)
 router.patch('/customer/profile/update', strictLimiter,validateCustomerUpdate, authenticateJWT, updateCustomerProfile)
 router.get('/customer/profile', mildLimiter,authenticateJWT, customerProfile)
 router.get("/customer/appointment", mildLimiter,authenticateJWT, customerAppointment) 
-router.get('/customer/profile/logout', mildLimiter,authenticateJWT,logoutCustomer)
+router.post('/customer/profile/logout', mildLimiter,authenticateJWT,logoutCustomer)
 router.get('/customer/view', mildLimiter,authenticateJWT,requireSuperuser, viewCustomers)
 
 //service's endpoint
@@ -66,7 +66,7 @@ router.put('/stylist/updatepassword',strictLimiter, validateLoginAndChangePasswo
 router.get("/stylist/profile", mildLimiter, authenticateJWT, stylistProfile)
 router.get("/stylist/appointment",mildLimiter, authenticateJWT, stylistAppointment)
 router.get('/stylist/me', mildLimiter,authenticateJWT,getStylistsUsername)
-router.get('/stylist/logout', mildLimiter,authenticateJWT,logoutStylist)
+router.post('/stylist/logout', mildLimiter,authenticateJWT,logoutStylist)
 router.get('/stylist/view',mildLimiter, authenticateJWT, viewStylists)
 router.patch('/stylist/profile/update', strictLimiter,validateStylistUpdate, authenticateJWT, updateStylistProfile)
 
