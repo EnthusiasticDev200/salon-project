@@ -853,18 +853,18 @@ exports.createAppointment = async (req, res) =>{
                 message:"Please fix error",
                 validationErrors:checkAppointmentInput })
         }
-        const customerUsername = req.username
-        const {stylistUsername,hairStyle, appointmentDate, appointmentTime, status} = req.body
-        const userId = req.userId
-        const [queryCustomer] = await db.query('SELECT customer_id FROM customers WHERE customer_id = ?', [userId])
         
+        const {stylistUsername,hairStyle, appointmentDate, appointmentTime, status} = req.body
+        const customerUsername = req.username
+        const [queryCustomer] = await db.query('SELECT customer_id FROM customers WHERE username = ?', [customerUsername])
+       
         const stylisUsername = req.stylistUsername
         const [queryStylist] = await db.query("SELECT stylist_id FROM stylists WHERE username = ?", [stylisUsername])
         if(queryStylist.length === 0){
             return res.status(401).json({message:"Invalid stylist username"})
         }
         const [queryService] = await db.query(`
-            SELECT hair_style
+            SELECT service_id, hair_style
                 FROM services 
                 WHERE hair_style = ?`, 
                 [hairStyle]
@@ -909,6 +909,7 @@ exports.createAppointment = async (req, res) =>{
             return res.status(401).json({message:"Not stylist's area of specialty"})
         }
         const apValue = [queryCustomer[0].customer_id,queryStylist[0].stylist_id, queryService[0].service_id, appointmentDate, appointmentTime, 'pending']
+        if(!apValue || apValue.length !== 6) return res.status(400).json("One of the appointment's value could be missing")
         const [insertResult] = await db.query(`
             INSERT INTO appointments
             (

@@ -1,30 +1,46 @@
 const {check} = require("express-validator");
 
-const today = new Date().toISOString().split("T")[0]; // removes time format from date
-const convertToDate = new Date(today)
-
-// validatio logic
 const validateAppointment =
 [   
     check("stylistUsername", "stylistUsername field is require").notEmpty().toLowerCase(),
     check("hairStyle", "hairStyle field is require").notEmpty().toLowerCase(),
-    check("appointmentDate", "Date cannot be in the past")
+    check("appointmentDate", "Appointmnet date is required")
     .notEmpty()
+    .isISO8601()
     .custom((value)=>{
-        return value >=today // ensures present to future time but not past
+        const scheduleDate = new Date(value)
+        const present = new Date ()
+        //Nullify time(H:M,S,Ms) from Date instances
+        scheduleDate.setHours(0,0,0,0)
+        present.setHours(0,0,0,0)
+        if(scheduleDate < present){
+            throw new Error("Appointment date cannot be in the past")
+        }
+        // appointment must span 3months
+        const appointmentSpan = new Date()
+        appointmentSpan.setMonth(appointmentSpan.getMonth() + 3)
+
+        if(scheduleDate > appointmentSpan){
+            throw new Error('Appointment date cannot exceed three months from today' )
+        }
+        return true
     }),
     check("appointmentTime", "Time field is required")
     .notEmpty()
     .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/) // HH:mm format regex,,
     //ensure time is not past logic
     .custom((value, {req})=>{
-        const appointmentDate = req.body.appointmentDate
-        const now = new Date()
-        const selectedDateTime = new Date(`${appointmentDate}T${value}`)// create valid JS Date obj
-        if(appointmentDate === today && selectedDateTime < now){
-            throw new Error ('Time caannot be in the past')
-        } return true
+        const [hours, minutes] = value.split(':').map(Number)
+        //opening and closing hours
+        const openingHour = 8 // 8AM
+        const closingHour = 21 //9PM
+        if(hours < openingHour || (hours > closingHour || (hours === closingHour && minutes > 0))){
+            throw new Error ("Appointment must be within 8AM and 9PM (21:00)")
+        }
+        
+        return true
     })
+
     
 ]
 
