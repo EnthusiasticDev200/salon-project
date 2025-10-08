@@ -30,12 +30,22 @@ const validateAppointment =
     .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/) // HH:mm format regex,,
     //ensure time is not past logic
     .custom((value, {req})=>{
+        const appointmentDate = req.body.appointmentDate
+
+        const present = new Date()
+        const presentDate = present.toISOString().split('T')[0] // without time
+        const scheduleDateTime = new Date(`${appointmentDate}T${value}`)
+
         const [hours, minutes] = value.split(':').map(Number)
         //opening and closing hours
         const openingHour = 8 // 8AM
         const closingHour = 21 //9PM
+        
         if(hours < openingHour || (hours > closingHour || (hours === closingHour && minutes > 0))){
             throw new Error ("Appointment must be within 8AM and 9PM (21:00)")
+        }
+        if(appointmentDate === presentDate && scheduleDateTime < present){
+            throw new Error('Time caanot be in the past')
         }
         
         return true
