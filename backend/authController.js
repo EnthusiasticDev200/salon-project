@@ -683,7 +683,7 @@ exports.stylistAppointment = async (req, res)=>{
                 ORDER BY appointment_date DESC, appointment_time DESC`,
             [stylistId])
         if(myAppointments.length === 0){
-            return res.status(200).json({message:`No appointment: ${myAppointments}`})
+            return res.status(200).json(myAppointments)
         }
         return res.status(200).json(myAppointments)
     }catch(error){
