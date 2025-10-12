@@ -31,7 +31,7 @@ const
     createAppointment, viewAppointments,
     createReview,viewReviews,
     sendOtp, verifyOtp,
-    refreshJWTokens,
+    refreshAdminJWTokens, refreshCustomerJWTokens, refreshStylistJWTokens
     
 } = require('../authController')
 
@@ -71,8 +71,12 @@ router.get('/stylist/view',mildLimiter, authenticateJWT, viewStylists)
 router.patch('/stylist/profile/update', strictLimiter,validateStylistUpdate, authenticateJWT, updateStylistProfile)
 
 
-// refresh token endpoint
-router.post('/token/refresh', mildLimiter, validateRefreshJWToken, refreshJWTokens )
+// refresh token endpoint for admin
+router.post('/admin/token/refresh', mildLimiter, validateRefreshJWToken, refreshAdminJWTokens )
+
+router.post('/customer/token/refresh', mildLimiter, validateRefreshJWToken, refreshCustomerJWTokens )
+
+router.post('/stylist/token/refresh', mildLimiter, validateRefreshJWToken, refreshStylistJWTokens )
 
 //appointment endpoint
 router.post('/appointment/create', strictLimiter, validateAppointment,authenticateJWT, createAppointment)

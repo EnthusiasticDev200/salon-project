@@ -3,7 +3,6 @@ const bcrypt = require('bcryptjs')
 const dotenv = require("dotenv")
 const { validationResult } = require("express-validator") 
 const { notifyStylist, notifyCustomer } = require('./socketHandler');
-const {sendOtpEmail} = require('../utils/mailer')
 const generateJWToken = require('../utils/token')
 const redis = require('../backend/redis')
 const otpQueue = require('../utils/worker')
@@ -123,7 +122,7 @@ exports.logInAdmin = async (req, res)=>{
             }
         const refreshAdminPayload = {adminId: admin.adminId}
         const adminToken = generateJWToken.accessToken(payload)
-        const refreshToken = generateJWToken.refreshToken(
+        const refreshAdminToken = generateJWToken.refreshToken(
             refreshAdminPayload
         )
         //drop any previous cookie
@@ -136,7 +135,7 @@ exports.logInAdmin = async (req, res)=>{
                 sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
                 maxAge : 10 * 60 * 1000
             })
-        res.cookie('refresh_admin_token', refreshToken, 
+        res.cookie('refresh_admin_token', refreshAdminToken, 
             {
                 httpOnly : true,
                 secure : process.env.NODE_ENV === 'production',
@@ -277,7 +276,7 @@ exports.logInCustomer =  async (req, res)=>{
             userId:user.customer_id,
         }
         const customerToken = generateJWToken.accessToken(payload)
-        const refreshToken = generateJWToken.refreshToken(refreshCustomerPayload)
+        const refreshCustomerToken = generateJWToken.refreshToken(refreshCustomerPayload)
         //drop any previous cookie
         res.clearCookie('customer_token'); 
         //setting up new cookie 
@@ -286,9 +285,9 @@ exports.logInCustomer =  async (req, res)=>{
                 httpOnly : true,
                 secure : process.env.NODE_ENV === 'production',
                 sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
-                maxAge : 10 * 60 *1000
+                maxAge : 1 * 60 *1000
             })
-        res.cookie('refresh_customer_token', refreshToken, 
+        res.cookie('refresh_customer_token', refreshCustomerToken, 
             {
                 httpOnly : true,
                 secure : process.env.NODE_ENV === 'production',
@@ -560,7 +559,7 @@ exports.loginStylist = async (req, res)=>{
             }
         const refreshStylistPayload = { stylistId : stylistUser.stylist_id} 
         const stylistToken = generateJWToken.accessToken(payload)
-        const refreshToken = generateJWToken.refreshToken(
+        const refreshStylistToken = generateJWToken.refreshToken(
             refreshStylistPayload
         )
         //drop any previous cookie
@@ -573,7 +572,7 @@ exports.loginStylist = async (req, res)=>{
                 sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax' ,
                 maxAge : 10 * 60 * 1000
             })
-        res.cookie('refresh_stylist_token', refreshToken, 
+        res.cookie('refresh_stylist_token', refreshStylistToken, 
             {
                 httpOnly : true,
                 secure : process.env.NODE_ENV === 'production',
@@ -761,85 +760,109 @@ exports.updateStylistProfile = async (req, res)=>{
     }
 }
 
-// refresh token logic
-exports.refreshJWTokens = async (req, res)=>{
+// refresh token logic for admin
+exports.refreshAdminJWTokens = async (req, res)=>{
     const adminId = req.adminId
-    const userId = req.userId
-    const stylistId = req.stylistId
-    
-    if(!adminId && !userId && !stylistId){
+    if(!adminId){
         return res.status(401).json({
-            message: "Unathorized"})
+            message: "Unathorized. Admin only"})
     }
     try{
-        if(adminId){
-            const [checkAdmin] = await db.query(`
-                SELECT admin_id, username, role
-                FROM admins
-                WHERE admin_id = ?`, [adminId])
-            if(checkAdmin.length === 0){
-                return res.status(404).json({message: "Admin not found"})
-            }
-            const adminUser = checkAdmin[0]
-            const adminPayload = {
-                adminId: adminUser.admin_id,
-                adminUsername: adminUser.username,
-                role: adminUser.role,
-            }
-            const newAdminToken = generateJWToken.accessToken(adminPayload)
-            res.cookie('admin_token', newAdminToken, {
-                httpOnly : true,
-                secure : process.env.NDDE_ENV === 'production',
-                sameSite : process.env.NDDE_ENV === 'production' ? "None" : "Lax",
-                maxAge : 10 * 60 * 60
-            })
-        return res.status(200).json({message: "Refresh token successfully created"})
-    }
-        if(userId){
-            const [checkCustomer] = await db.query(`SELECT customer_id, username FROM customers WHERE customer_id = ?`, [userId])
-            if(checkCustomer.length === 0){
-                return res.status(404).json({message: "Customer not found"})
-            }
-            const user = checkCustomer[0]
-            const customerPayload = {
-                userId:user.customer_id, 
-                username:user.username,
-            }
-            const newCustomerToken = generateJWToken.accessToken(customerPayload)
-            res.cookie('customer_token', newCustomerToken, {
-                httpOnly : true,
-                secure : process.env.NDDE_ENV === 'production',
-                sameSite : process.env.NDDE_ENV === 'production' ? "None" : "Lax",
-                maxAge : 10 * 60 * 60
-            })
-        return res.status(200).json({message: "Refresh token successfully created"})
+        const [checkAdmin] = await db.query(`
+            SELECT admin_id, username, role FROM admins WHERE admin_id = ?`, [adminId])
+        if(checkAdmin.length === 0){
+            return res.status(404).json({message: "Admin not found"})
         }
-        if(stylistId){
-            const [checkStylist] = await db.query(`
-                SELECT stylist_id, username
-                FROM stylists
-                WHERE stylist_id = ?`, [stylistId])
-            if(checkStylist.length === 0){
-                return res.status(404).json({message: "Stylist not found"})
-            }
-            const stylistUser = checkStylist[0]
-            const stylistPayload = {
-                stylistId : stylistUser.stylist_id,
-                stylistUsername : stylistUser.username,
-            }
-            const newStylistToken = generateJWToken.accessToken(stylistPayload)
-            res.cookie('stylist_token', newStylistToken, {
-                httpOnly : true,
-                secure : process.env.NDDE_ENV === 'production',
-                sameSite : process.env.NDDE_ENV === 'production' ? "None" : "Lax",
-                maxAge : 10 * 60 * 60
-            })
-        return res.status(200).json({message: "Refresh token successfully created"})
+        const adminUser = checkAdmin[0]
+        const adminPayload = {
+            adminId: adminUser.admin_id,
+            adminUsername: adminUser.username,
+            role: adminUser.role,
         }
+        const newAdminToken = generateJWToken.accessToken(adminPayload)
+        res.cookie('admin_token', newAdminToken, {
+            httpOnly : true,
+            secure : process.env.NODE_ENV === 'production',
+            sameSite : process.env.NODE_ENV === 'production' ? "None" : "Lax",
+            maxAge : 10 * 60 * 1000
+        })
+        return res.status(200).json({message: "Refresh token was successfully"})
     }catch(error){
-        console.log("Error encountered creating refresh token: ", error)
+        console.log("Error encountered creating refresh token for admin: ", error)
         return res.status(500).json({
-            message : "Error generating refresh token",
+            message : "Error generating admin refresh token",
+            error : error.stack
+        })
+    } 
+
+}
+
+// refresh token for customer
+exports.refreshCustomerJWTokens = async (req, res) =>{
+    const userId = req.userId
+    if(!userId){
+        return res.status(401).json({
+            message: "Unathorized. Customer's only"})
+    }
+    try{
+        const [checkCustomer] = await db.query(`SELECT customer_id, username FROM customers WHERE customer_id = ?`, [userId])
+        if(checkCustomer.length === 0){
+                return res.status(404).json({message: "Customer not found"})
+        }
+        const user = checkCustomer[0]
+        const customerPayload = {
+            userId:user.customer_id, 
+            username:user.username,
+        }
+        const newCustomerToken = generateJWToken.accessToken(customerPayload)
+        res.cookie('customer_token', newCustomerToken, {
+            httpOnly : true,
+            secure : process.env.NODE_ENV === 'production',
+            sameSite : process.env.NODE_ENV === 'production' ? "None" : "Lax",
+            maxAge : 10 * 60 * 1000
+        })
+        return res.status(200).json({message: "Refresh token successfully created"})
+    }catch(error){
+        console.log("Error encountered creating refresh token for customer: ", error)
+        return res.status(500).json({
+            message : "Error generating customer refresh token",
+            error : error.stack
+        })
+    } 
+}   
+
+// refresh token for stylist
+exports.refreshStylistJWTokens = async (req, res) =>{
+    const stylistId = req.stylistId
+    if(!stylistId){
+        return res.status(401).json({
+            message: "Unathorized. Stylist's only"})
+    }
+    try{
+        const [checkStylist] = await db.query(`
+            SELECT stylist_id, username
+            FROM stylists
+            WHERE stylist_id = ?`, [stylistId])
+        if(checkStylist.length === 0){
+            return res.status(404).json({message: "Stylist not found"})
+        }
+        const stylistUser = checkStylist[0]
+        const stylistPayload = {
+            stylistId : stylistUser.stylist_id,
+            stylistUsername : stylistUser.username,
+        }
+        const newStylistToken = generateJWToken.accessToken(stylistPayload)
+        res.cookie('stylist_token', newStylistToken, {
+            httpOnly : true,
+            secure : process.env.NODE_ENV === 'production',
+            sameSite : process.env.NODE_ENV === 'production' ? "None" : "Lax",
+            maxAge : 10 * 60 * 1000 // return back to 10mins
+        })
+        return res.status(200).json({message: "Refresh token successfully created"})
+    }catch(error){
+        console.log("Error encountered creating refresh token for stylist: ", error)
+        return res.status(500).json({
+            message : "Error generating stylist refresh token",
             error : error.stack
         })
     } 
