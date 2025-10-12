@@ -50,24 +50,32 @@ const authenticateJWT = (req, res, next)=>{
 }
 
 const validateRefreshJWToken = (req, res, next)=>{
-    const refreshToken = req.cookies.refresh_admin_token || req.cookies.refresh_customer_token || req.cookies.refresh_stylist_token
-    if( !refreshToken ){
+    const refreshAdminToken = req.cookies.refresh_admin_token
+    const refreshCustomerToken = req.cookies.refresh_customer_token
+    const refreshStylistToken = req.cookies.refresh_stylist_token
+    
+    if( !refreshAdminToken || !refreshCustomerToken || !refreshStylistToken ){
         return res.status(401).json({message: "No refresh token found"})
     }
     try{
-        const decoded = jwt.verify(refreshToken, process.env.REFRESH_JWT_SECRET,{
+        if(refreshAdminToken){
+            const decoded = jwt.verify(refreshAdminToken, process.env.REFRESH_JWT_SECRET,{
                 algorithms: ['HS256']
             })
-        if(decoded.adminId){
-                req.adminId = decoded.adminId || null
-            }
-        else if(decoded.userId){
-                req.userId = decoded.userId || null
-            }
-        else if (decoded.stylistId) {
-                req.stylistId = decoded.stylistId || null
-        }   
-        
+            req.adminId = decoded.adminId || null
+        }
+        if(refreshCustomerToken){
+            const decoded = jwt.verify(refreshCustomerToken, process.env.REFRESH_JWT_SECRET,{
+                algorithms: ['HS256']
+            })
+            req.userId = decoded.userId || null
+        }
+         if(refreshStylistToken){
+            const decoded = jwt.verify(refreshStylistToken, process.env.REFRESH_JWT_SECRET,{
+                algorithms: ['HS256']
+            })
+            req.stylistId = decoded.stylistId || null   
+        }
         if(!req.adminId && !req.userId && !req.stylistId){
             return res.status(403).json({message: "Invalid or expired refresh token"})
         }
