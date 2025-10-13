@@ -116,6 +116,13 @@ const validateAdmin =
         .isLength({min:6})
 ]
 
+const validateAdminProfileUpdate = [
+    check("updateEmail", "Must be a valid email").notEmpty().isEmail(),
+    check("updatePhoneNumber", "Phone number is required")
+    .notEmpty()
+    .matches(/^\+?\d{10,15}$/) // length 10-15 and accepts country code
+    .withMessage("Phone number must be 10 to 15 digits, and may start with '+'"),
+]
 const validateReview = 
 [
     check("hairStyle", "Hair style is required").notEmpty().toLowerCase(),
@@ -174,6 +181,6 @@ module.exports =
     validateEmail,validateOtp, validateService,
     validateStylist, validateStylistUpdate,
     validateCustomer, validateCustomerUpdate,
-    validateAdmin, validateReview
+    validateAdmin, validateReview, validateAdminProfileUpdate
 
 }
