@@ -96,7 +96,7 @@ exports.logInAdmin = async (req, res)=>{
                 `email:${email}`,
                 JSON.stringify(adminData),
                 `EX`,
-                20 * 60 // 20mins
+                20 * 60  * 60// 20mins
             )
             // admin now has cloned adminData
             admin = {...adminData, password_hash: adminUser.password_hash} 
@@ -285,7 +285,7 @@ exports.logInCustomer =  async (req, res)=>{
                 httpOnly : true,
                 secure : process.env.NODE_ENV === 'production',
                 sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
-                maxAge : 1 * 60 *1000
+                maxAge : 10 * 60 *1000
             })
         res.cookie('refresh_customer_token', refreshCustomerToken, 
             {

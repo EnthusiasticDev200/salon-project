@@ -54,7 +54,7 @@ const validateRefreshJWToken = (req, res, next)=>{
     const refreshCustomerToken = req.cookies.refresh_customer_token
     const refreshStylistToken = req.cookies.refresh_stylist_token
     
-    if( !refreshAdminToken || !refreshCustomerToken || !refreshStylistToken ){
+    if( !refreshAdminToken && !refreshCustomerToken && !refreshStylistToken ){
         return res.status(401).json({message: "No refresh token found"})
     }
     try{
