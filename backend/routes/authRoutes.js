@@ -35,7 +35,7 @@ router.post('/admin/register', strictLimiter ,validateAdmin, registerAdmin)
 router.post('/admin/login',strictLimiter,logInAdmin)
 router.post("/admin/logout", mildLimiter,authenticateJWT,logoutAdmin)
 router.put('/admin/updatepassword', strictLimiter, validateLoginAndChangePassword, changeAdminPassword)
-router.patch('/adnin/updateprofile', strictLimiter, validateAdminProfileUpdate, authenticateJWT, updateAdminProfile)
+router.patch('/admin/updateprofile', strictLimiter, validateAdminProfileUpdate, authenticateJWT, updateAdminProfile)
 
 //customer's endpoints
 router.post('/customer/register', strictLimiter, validateCustomer,registerCustomer)

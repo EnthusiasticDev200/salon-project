@@ -202,18 +202,21 @@ exports.changeAdminPassword = async(req, res)=>{
     }
 }
 exports.updateAdminProfile = async (req,res)=>{
-    const adminUsername = req.adminUsername
     try{
         const updateProfileInput = await checkValidationResult(req)
-        if (checkInput) return res.status(400).json({
-            message : 'Please correct error',
-            validationErrors : updateProfileInput
-        })
+        if (updateProfileInput){ 
+            return res.status(400).json({
+                message : 'Please correct error',
+                validationErrors : updateProfileInput
+            })
+        }
+        const adminUsername = req.adminUsername
+        const { updateEmail, updatePhoneNumber } = req.body
         const [admin] = await db.query(`
             SELECT admin_id FROM admins WHERE username = ?`, [adminUsername])
         if (admin.length === 0) return res.status(401).json({
             message: " Invalid username " })
-        const { updateEmail, updatePhoneNumber } = req.body
+       
         await db.query(`
             UPDATE admins 
             SET email = ?, phone_number = ?
