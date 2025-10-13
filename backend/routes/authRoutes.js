@@ -5,15 +5,9 @@ const {strictLimiter, mildLimiter} = require('../../middlewares/rateLimiter')
 const 
 {
     validateAppointment, validateLoginAndChangePassword, validateEmail, 
-    validateOtp, validateService,
-    validateStylist,
-    validateCustomer, validateCustomerUpdate,
-    validateAdmin,
-    validateReview,
-    validateStylistUpdate
-
+    validateOtp, validateService, validateStylist, validateCustomer, validateCustomerUpdate,
+    validateAdmin, validateReview, validateStylistUpdate, validateAdminProfileUpdate
 } = require("../../middlewares/validations")
-
 
 const
 {
@@ -31,7 +25,8 @@ const
     createAppointment, viewAppointments,
     createReview,viewReviews,
     sendOtp, verifyOtp,
-    refreshAdminJWTokens, refreshCustomerJWTokens, refreshStylistJWTokens
+    refreshAdminJWTokens, refreshCustomerJWTokens, refreshStylistJWTokens,
+    updateAdminProfile
     
 } = require('../authController')
 
@@ -40,6 +35,7 @@ router.post('/admin/register', strictLimiter ,validateAdmin, registerAdmin)
 router.post('/admin/login',strictLimiter,logInAdmin)
 router.post("/admin/logout", mildLimiter,authenticateJWT,logoutAdmin)
 router.put('/admin/updatepassword', strictLimiter, validateLoginAndChangePassword, changeAdminPassword)
+router.patch('/adnin/updateprofile', strictLimiter, validateAdminProfileUpdate, authenticateJWT, updateAdminProfile)
 
 //customer's endpoints
 router.post('/customer/register', strictLimiter, validateCustomer,registerCustomer)

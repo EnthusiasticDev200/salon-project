@@ -201,6 +201,32 @@ exports.changeAdminPassword = async(req, res)=>{
             err:err.stack})
     }
 }
+exports.updateAdminProfile = async (req,res)=>{
+    const adminUsername = req.adminUsername
+    try{
+        const updateProfileInput = await checkValidationResult(req)
+        if (checkInput) return res.status(400).json({
+            message : 'Please correct error',
+            validationErrors : updateProfileInput
+        })
+        const [admin] = await db.query(`
+            SELECT admin_id FROM admins WHERE username = ?`, [adminUsername])
+        if (admin.length === 0) return res.status(401).json({
+            message: " Invalid username " })
+        const { updateEmail, updatePhoneNumber } = req.body
+        await db.query(`
+            UPDATE admins 
+            SET email = ?, phone_number = ?
+            WHERE username = ?`, 
+            [updateEmail,updatePhoneNumber, adminUsername])
+        return res.status(200).json({message: `Admin profile successfully updated`})
+    }catch(err){
+        console.error("Error updating admin profile", err)
+        return res.status(500).json({
+            message:"Error updating admin profile", 
+            err:err.stack})
+    }
+}
 // all about customer
 exports.registerCustomer = async (req, res)=>{
     try{
