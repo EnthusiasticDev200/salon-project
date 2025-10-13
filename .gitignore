@@ -1,8 +1,7 @@
-.env
-.env.local
 sample.js
 sampleHTML.html
 workingCustomerlogic.js
 unmodifiedLoginCustomer.html
 /node_modules
 /archive
+config.bat
