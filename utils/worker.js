@@ -25,14 +25,6 @@ const otpWorker = new Worker(
     { connection }
 )
 
-// otpWorker.on('completed', (job)=> {
-//     console.log(`Job: ${job.id} is completed for ${job.data.email}`)
-// })
-
-// otpWorker.on("failed", (job, err) => {
-//     console.error(`Job: ${job?.id} failed: ${err.message}`);
-// });
-
 module.exports = otpQueue
 
 
