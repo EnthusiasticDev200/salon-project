@@ -910,8 +910,7 @@ exports.createAppointment = async (req, res) =>{
         const customerUsername = req.username
         const [queryCustomer] = await db.query('SELECT customer_id FROM customers WHERE username = ?', [customerUsername])
        
-        const stylisUsername = req.stylistUsername
-        const [queryStylist] = await db.query("SELECT stylist_id FROM stylists WHERE username = ?", [stylisUsername])
+        const [queryStylist] = await db.query("SELECT stylist_id FROM stylists WHERE username = ?", [stylistUsername])
         if(queryStylist.length === 0){
             return res.status(401).json({message:"Invalid stylist username"})
         }
@@ -974,7 +973,7 @@ exports.createAppointment = async (req, res) =>{
         const appointmentData = 
         {
             appointmentId : insertResult.insertId,
-            stylistUsername : stylisUsername,
+            stylistUsername : stylistUsername,
             customerName : queryCustomer[0].first_name + ' ' + queryCustomer[0].last_name,
             customerUsername : queryCustomer[0].username,
             hairStyle : hairStyle,
