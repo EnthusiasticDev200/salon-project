@@ -1,7 +1,11 @@
 const express = require('express')
-const {authenticateJWT, requireSuperuser, customerOnly, validateRefreshJWToken} = require('../../middlewares/auth')
 const router = express.Router()
+
+const { authenticateJWT, requireSuperuser, customerOnly, 
+    stylistOnly, validateRefreshJWToken, adminOnly } = require('../../middlewares/auth')
+
 const {strictLimiter, mildLimiter} = require('../../middlewares/rateLimiter')
+
 const 
 {
     validateAppointment, validateLoginAndChangePassword, validateEmail, 
@@ -43,11 +47,11 @@ router.post('/customer/login',strictLimiter,logInCustomer)
 router.put('/customer/updatepassword', strictLimiter,validateLoginAndChangePassword, changeCustomerPassword)
 
 //customer's protected routes
-router.get('/customer/me', mildLimiter,authenticateJWT, getCustomerUsername)
-router.patch('/customer/profile/update', strictLimiter,validateCustomerUpdate, authenticateJWT, updateCustomerProfile)
-router.get('/customer/profile', mildLimiter,authenticateJWT, customerProfile)
-router.get("/customer/appointment", mildLimiter,authenticateJWT, customerAppointment) 
-router.post('/customer/profile/logout', mildLimiter,authenticateJWT,logoutCustomer)
+router.get('/customer/me', mildLimiter,authenticateJWT,customerOnly, getCustomerUsername)
+router.patch('/customer/profile/update', strictLimiter,validateCustomerUpdate, authenticateJWT, customerOnly, updateCustomerProfile)
+router.get('/customer/profile', mildLimiter,authenticateJWT, customerOnly, customerProfile)
+router.get("/customer/appointment", mildLimiter,authenticateJWT, customerOnly, customerAppointment) 
+router.post('/customer/profile/logout', mildLimiter,authenticateJWT, customerOnly, logoutCustomer)
 router.get('/customer/view', mildLimiter,authenticateJWT,requireSuperuser, viewCustomers)
 
 //service's endpoint
@@ -59,20 +63,20 @@ router.post('/stylist/register', strictLimiter,validateStylist,registerStylist)
 router.post('/stylist/login',strictLimiter,loginStylist)
 router.put('/stylist/updatepassword',strictLimiter, validateLoginAndChangePassword, changeStylistPassword)
 
-router.get("/stylist/profile", mildLimiter, authenticateJWT, stylistProfile)
-router.get("/stylist/appointment",mildLimiter, authenticateJWT, stylistAppointment)
-router.get('/stylist/me', mildLimiter,authenticateJWT,getStylistsUsername)
-router.post('/stylist/logout', mildLimiter,authenticateJWT,logoutStylist)
+router.get("/stylist/profile", mildLimiter, authenticateJWT, stylistOnly, stylistProfile)
+router.get("/stylist/appointment",mildLimiter, authenticateJWT, stylistOnly, stylistAppointment)
+router.get('/stylist/me', mildLimiter,authenticateJWT,stylistOnly,getStylistsUsername)
+router.post('/stylist/logout', mildLimiter,authenticateJWT,stylistOnly, logoutStylist)
 router.get('/stylist/view',mildLimiter, authenticateJWT, viewStylists)
-router.patch('/stylist/profile/update', strictLimiter,validateStylistUpdate, authenticateJWT, updateStylistProfile)
+router.patch('/stylist/profile/update', strictLimiter,validateStylistUpdate, authenticateJWT, stylistOnly, updateStylistProfile)
 
 
 // refresh token endpoint for admin
-router.post('/admin/token/refresh', mildLimiter, validateRefreshJWToken, refreshAdminJWTokens )
+router.post('/admin/token/refresh', mildLimiter, validateRefreshJWToken, adminOnly, refreshAdminJWTokens )
 
-router.post('/customer/token/refresh', mildLimiter, validateRefreshJWToken, refreshCustomerJWTokens )
+router.post('/customer/token/refresh', mildLimiter, validateRefreshJWToken, customerOnly, refreshCustomerJWTokens )
 
-router.post('/stylist/token/refresh', mildLimiter, validateRefreshJWToken, refreshStylistJWTokens )
+router.post('/stylist/token/refresh', mildLimiter, validateRefreshJWToken, stylistOnly, refreshStylistJWTokens )
 
 //appointment endpoint
 router.post('/appointment/create', strictLimiter, validateAppointment,authenticateJWT, createAppointment)
