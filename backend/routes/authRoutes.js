@@ -72,11 +72,11 @@ router.patch('/stylist/profile/update', strictLimiter,validateStylistUpdate, aut
 
 
 // refresh token endpoint for admin
-router.post('/admin/token/refresh', mildLimiter, validateRefreshJWToken, adminOnly, refreshAdminJWTokens )
+router.post('/admin/token/refresh', mildLimiter, validateRefreshJWToken, refreshAdminJWTokens )
 
-router.post('/customer/token/refresh', mildLimiter, validateRefreshJWToken, customerOnly, refreshCustomerJWTokens )
+router.post('/customer/token/refresh', mildLimiter, validateRefreshJWToken, refreshCustomerJWTokens )
 
-router.post('/stylist/token/refresh', mildLimiter, validateRefreshJWToken, stylistOnly, refreshStylistJWTokens )
+router.post('/stylist/token/refresh', mildLimiter, validateRefreshJWToken, refreshStylistJWTokens )
 
 //appointment endpoint
 router.post('/appointment/create', strictLimiter, validateAppointment,authenticateJWT, createAppointment)
