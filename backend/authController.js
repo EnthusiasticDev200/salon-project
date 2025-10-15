@@ -34,7 +34,7 @@ exports.registerAdmin = async (req, res) =>{
         console.log("After query admin reg result", afterDb + 'ms')
        
         if(checkAdmin.length> 0){
-            return res.status(400).json({message:"Admin already exist"})
+            return res.status(409).json({message:"Admin already exist"})
         };
         const beforeHash = performance.now()
         const hashedPassword = await bcrypt.hash(password, 10)
@@ -63,7 +63,7 @@ exports.logInAdmin = async (req, res)=>{
        
         if(checkAdminLoginInput) return res.status(400).json(
             {
-                message: 'Please fix input error',
+                message: checkAdminLoginInput,
                 validationErrors: checkAdminLoginInput
             })
         const {email, password} = req.body
@@ -83,7 +83,10 @@ exports.logInAdmin = async (req, res)=>{
 
             const afterDb = performance.now() - beforeDb
             console.log("After query result", afterDb + 'ms')
-            if(checkAdmin.length === 0) return res.status(403).json({message:"Not an admin"});
+            if(checkAdmin.length === 0) return res.json({
+                success: false,
+                status:404,
+                error: 'Not an admin'});
             // capture admin db info
             const adminUser = checkAdmin[0]
             const adminData = {
@@ -112,7 +115,7 @@ exports.logInAdmin = async (req, res)=>{
         const afterHash = performance.now() - beforeHash
         console.log("After hash admin login result:", afterHash + 'ms')
         if(!confirmPassword){
-            return res.status(401).json({message:"Invalid password"})
+            return res.json({message:"Invalid password"})
         }
         const payload =  
             {
@@ -189,7 +192,7 @@ exports.changeAdminPassword = async(req, res)=>{
         console.log("After hash in adminChangePW", afterHash)
         const [checkIfPasswordUpdated] = await db.query("SELECT password_hash FROM admins WHERE password_hash=?", [hashedPassword])
         if(checkIfPasswordUpdated.length > 0){
-            return res.status(401).json("Password already updated")
+            return res.status(409).json("Password already updated")
         }
         await db.query("UPDATE admins SET password_hash =? WHERE email = ?", [hashedPassword, email])
         await redis.del(`updateOtp:${email}`)
@@ -214,7 +217,7 @@ exports.updateAdminProfile = async (req,res)=>{
         const { updateEmail, updatePhoneNumber } = req.body
         const [admin] = await db.query(`
             SELECT admin_id FROM admins WHERE username = ?`, [adminUsername])
-        if (admin.length === 0) return res.status(401).json({
+        if (admin.length === 0) return res.status(404).json({
             message: " Invalid username " })
        
         await db.query(`
@@ -246,7 +249,7 @@ exports.registerCustomer = async (req, res)=>{
         const afterDb = performance.now() - beforeDb
         console.log("After query cus reg result", afterDb + 'ms')
         if(customer.length> 0){
-            return res.status(400).json({message:"Customer already exist"})
+            return res.status(409).json({message:"Customer already exist"})
         };
         const beforeHash = performance.now()
         const hashedPassword = await bcrypt.hash(password, 10)
@@ -285,7 +288,7 @@ exports.logInCustomer =  async (req, res)=>{
         console.log("After query cus lgoin result", afterDb + 'ms') 
         // check if customer exist
         if(!customer || customer.length === 0){
-            return res.status(400).json({message:"Customer's email doesn't exist. Please register"}); 
+            return res.status(409).json({message:"Customer's email doesn't exist. Please register"}); 
         }
         const beforeHash = performance.now()
         const passwordMatch = await bcrypt.compare(password,customer[0].password_hash)
@@ -343,7 +346,7 @@ exports.changeCustomerPassword = async(req, res)=>{
         const cachedOtp = await redis.get(`updateOtp:${email}`)
         //validate cachedEmail and email 
         if(!cachedOtp){
-           return res.status(401).json({message:'OTP not sent to thhis email'})
+           return res.status(404).json({message:'OTP not sent to thhis email'})
         }
         const otp = JSON.parse(cachedOtp)
         if(!otp.verified) return res.status(401).json({message: "OTP not yet verified"})
@@ -374,16 +377,15 @@ exports.changeCustomerPassword = async(req, res)=>{
 exports.getCustomerUsername = async (req, res)=>{
     try{
         const customerUsername = req.username
-        if(!customerUsername) return res.status(401).json({message: `Wrong person asking`})
         const [getCustomer] = await db.query(`
             SELECT username
                 FROM customers
                 WHERE username = ?`,
             [customerUsername])
         if(getCustomer.length === 0){
-            return res.status(401).json({message: 'Customer username does not exist'})
+            return res.json(getCustomer)
         }
-        return res.status(200).json({ username: getCustomer[0].username });
+        return res.status(200).json(getCustomer);
     }catch(err){
         console.error('Error getting customer username', err)
         return res.status(500).json({
@@ -392,15 +394,8 @@ exports.getCustomerUsername = async (req, res)=>{
     }
 }
 exports.customerAppointment = async (req, res)=>{
-    const userId = req.userId 
-    if(!userId){
-        return res.status(403).json({message:"Access denied. Kindly register"})
-    }
+    const username = req.username
     try{
-        const [checkCustomer] = await db.query("SELECT customer_id FROM customers WHERE customer_id=?", [userId])
-        if(checkCustomer.length === 0){
-            return res.status(403).json({message:"No record found"})
-        }
         const [checkMyappointment] = await db.query(`
             SELECT 
                 appointment_id AS appointmentId, 
@@ -412,10 +407,10 @@ exports.customerAppointment = async (req, res)=>{
                 FROM appointments 
                 JOIN stylists s USING(stylist_id) 
                 JOIN services serv USING(service_id)
-                WHERE customer_id = ? `,
-            [userId])
+                WHERE username = ? `,
+            [username])
         if(checkMyappointment.length === 0){
-           return res.status(401).json(checkMyappointment)
+           return res.status(200).json(checkMyappointment)
         }
         return res.status(200).json(checkMyappointment)
     }catch(err){
@@ -423,7 +418,7 @@ exports.customerAppointment = async (req, res)=>{
         return res.status(500).json({message: 'Get profile error', err:err.stack})
     }
 }
-exports.logoutCustomer = async(req, res)=>{
+exports.logoutCustomer = (req, res)=>{
     try{
         const username = req.username;
         res.clearCookie('customer_token')
@@ -449,12 +444,11 @@ exports.viewCustomers = async (req, res)=>{
 }
 exports.customerProfile = async (req, res)=>{
     try{
-        const userId = req.userId
-        if(!userId) return res.status(401).json({message: 'Sorry! Not for you'})
+        const username = req.username
         const [getProfile] = await db.query(`
             SELECT customer_id, first_name, last_name, username, email, phone_number 
             FROM customers
-            WHERE customer_id = ?`, [userId]);
+            WHERE username = ?`, [username]);
         return res.status(200).json(getProfile)
     }catch(err){
         console.error("Gettng customer failed", err)
@@ -469,18 +463,16 @@ exports.updateCustomerProfile = async (req, res)=>{
                 message: 'Please correct input errors', 
                 validationErrors: checkCusUpdateInput });
         }
-        const userId = req.userId;
+        const username = req.username;
         const {
             updateFirstName, updateLastName,
             updateEmail, updatePhoneNumber  } = req.body
-        const [queryCustomer] = await db.query(`
-            SELECT customer_id FROM customers WHERE customer_id = ?`, [userId])
-        if(!queryCustomer || queryCustomer.length === 0) return 'Invalid customer'
-        await db.query(`
+        const [udateProfile] = await db.query(`
             UPDATE customers 
-            SET first_name = ?, last_name = ?, email = ?,phone_number = ?
-            WHERE customer_id = ?`, 
-            [updateFirstName, updateLastName, updateEmail,updatePhoneNumber, userId])
+                SET first_name = ?, last_name = ?, email = ?,phone_number = ?
+            WHERE username = ?`, 
+            [updateFirstName, updateLastName, updateEmail,updatePhoneNumber, username])
+        if (udateProfile.affectedRows === 0) return res.status(404).json({message : "Customer not found"})
         return res.status(200).json({message: `Data updated successfully`})
     }catch(err){
         console.log(`Error Updating customer data: ${err.message}`)
@@ -502,10 +494,10 @@ exports.createServices = async (req, res)=>{
             SELECT hair_style FROM services WHERE hair_style =?`, 
             [hairStyle])
         if(checkHairStyle.length > 0){
-            return res.status(401).json({message:'This service is already provided'})
+            return res.status(409).json({message:'This service is already provided'})
         }
         await db.query(`INSERT INTO services(hair_style, price) VALUE(?,?)`, [hairStyle, price]);
-        return res.status(200).json({message:"Service successfully created"})
+        return res.status(201).json({message:"Service successfully created"})
     }catch(err){
         console.error("Error detected", err)
         return res.status(500).json({
@@ -534,7 +526,7 @@ exports.registerStylist = async (req, res)=>{
         const afterDb = performance.now() - beforeDb
         console.log("After db stylist reg result:", afterDb + 'ms')
         if(checkStylist.length> 0){
-            return res.status(400).json({message:"STylist already exist"})
+            return res.status(409).json({message:"STylist already exist"})
     };
         const beforeHash = performance.now()
         const hashedPassword = await bcrypt.hash(password, 10)
@@ -669,13 +661,12 @@ exports.changeStylistPassword = async(req, res)=>{
 exports.getStylistsUsername = async (req, res)=>{
     try{
         const stylistUsername = req.stylistUsername
-        if(!stylistUsername) return res.status(401).json({message: 'Cannot tell you!'})
         const [getStylist] = await db.query(`SELECT username FROM stylists WHERE username = ?`,
             [stylistUsername])
         if(getStylist.length === 0){
-            return res.status(401).json({message: 'Stylist username does not exist'})
+            return res.json(getStylist)
         }
-        return res.status(200).json({ username: getStylist[0].username });
+        return res.status(200).json( getStylist );
     }catch(err){
         console.error('Error getting stylist username', err)
         return res.status(500).json({
@@ -685,16 +676,7 @@ exports.getStylistsUsername = async (req, res)=>{
 }
 exports.stylistAppointment = async (req, res)=>{
     try{
-        const stylistId = req.stylistId
-        if(!stylistId) return res.status(401).json({message: "Sorry!, It's personal information"})
-        const [checkStylist] = await db.query(`
-            SELECT stylist_id
-                FROM stylists
-                WHERE stylist_id = ?`,
-            [stylistId])
-        if (checkStylist.length === 0){
-            return res.status(401).json({message: 'Not a stylist'})
-        }
+        const stylistUsername = req.stylistUsername
         const [myAppointments] = await db.query(`
             SELECT 
                 appointment_id AS appointmentId, 
@@ -707,9 +689,9 @@ exports.stylistAppointment = async (req, res)=>{
                 FROM appointments 
                 JOIN customers c USING(customer_id)
                 JOIN services serv USING(service_id) 
-                WHERE stylist_id = ?
+                WHERE username = ?
                 ORDER BY appointment_date DESC, appointment_time DESC`,
-            [stylistId])
+            [stylistUsername])
         if(myAppointments.length === 0){
             return res.status(200).json(myAppointments)
         }
@@ -721,16 +703,15 @@ exports.stylistAppointment = async (req, res)=>{
 }
 exports.stylistProfile = async (req,res)=>{
     try{
-        const stylistId = req.stylistId
-        if(!stylistId) return res.status(400).json({message: 'Not permitted'})
+        const stylistUsername = req.stylistUsername
         const [getStylistsProfile] = await db.query(`
             SELECT 
                 stylist_id, first_name, last_name, username, phone_number,
                     email, specialization
                 FROM stylists
-                WHERE stylist_id = ?`, [stylistId])
+                WHERE username = ?`, [stylistUsername])
         if(getStylistsProfile.length === 0) 
-            return res.status(404).json({message: 'No stylist record found'})
+            return res.status(200).json({message: 'No stylist record found'})
         return res.status(200).json(getStylistsProfile) 
     }catch(err){
         return res.status(500).json({
@@ -741,7 +722,6 @@ exports.stylistProfile = async (req,res)=>{
 exports.logoutStylist = async (req, res)=>{
     try{
         const username = req.stylistUsername
-        if(!username) return res.status(401).json({message: 'Not permitted'})
         res.clearCookie('stylist_token')
         res.clearCookie('refresh_stylist_token')
         return res.status(200).json({message:`Logout succesfully. Bye ${username}`})
@@ -770,18 +750,19 @@ exports.updateStylistProfile = async (req, res)=>{
                 message: 'Please correct input errors', 
                 validationErrors: checkStylistUpdateInput });
         }
-        const stylistId = req.stylistId;
+        const stylistUsername = req.stylistUsername;
         const {
             updateFirstName, updateLastName,
             updateEmail, updatePhoneNumber, updateSpecialization  } = req.body
-        const [queryStylist] = await db.query(`
-            SELECT stylist_id, first_name FROM stylists WHERE stylist_id = ?`, [stylistId])
-        if(!queryStylist || queryStylist.length === 0) return 'Invalid stylist'
-        await db.query(`
+        
+        const [updateMyProfile] = await db.query(`
             UPDATE stylists 
             SET first_name = ?, last_name = ?, email = ?,phone_number = ?, specialization = ?
-            WHERE stylist_id = ?`, 
-            [updateFirstName, updateLastName, updateEmail,updatePhoneNumber,updateSpecialization, stylistId])
+            WHERE username = ?`, 
+            [updateFirstName, updateLastName, updateEmail,updatePhoneNumber,updateSpecialization, stylistUsername])
+        if(updateMyProfile.affectedRows === 0) return res.status(404).json({
+            message : 'Stylist not found'
+        })
         return res.status(200).json({message: `Data updated successfully`})
     }catch(err){
         console.log(`Error Updating stylist data: ${err.message}`)
@@ -792,10 +773,6 @@ exports.updateStylistProfile = async (req, res)=>{
 // refresh token logic for admin
 exports.refreshAdminJWTokens = async (req, res)=>{
     const adminId = req.adminId
-    if(!adminId){
-        return res.status(401).json({
-            message: "Unathorized. Admin only"})
-    }
     try{
         const [checkAdmin] = await db.query(`
             SELECT admin_id, username, role FROM admins WHERE admin_id = ?`, [adminId])
@@ -829,10 +806,6 @@ exports.refreshAdminJWTokens = async (req, res)=>{
 // refresh token for customer
 exports.refreshCustomerJWTokens = async (req, res) =>{
     const userId = req.userId
-    if(!userId){
-        return res.status(401).json({
-            message: "Unathorized. Customer's only"})
-    }
     try{
         const [checkCustomer] = await db.query(`SELECT customer_id, username FROM customers WHERE customer_id = ?`, [userId])
         if(checkCustomer.length === 0){
@@ -863,10 +836,6 @@ exports.refreshCustomerJWTokens = async (req, res) =>{
 // refresh token for stylist
 exports.refreshStylistJWTokens = async (req, res) =>{
     const stylistId = req.stylistId
-    if(!stylistId){
-        return res.status(401).json({
-            message: "Unathorized. Stylist's only"})
-    }
     try{
         const [checkStylist] = await db.query(`
             SELECT stylist_id, username
@@ -1022,15 +991,7 @@ exports.createReview = async(req,res)=>{
                 validationErrors: checkReviewInput })
         }
         const {hairStyle, rating, feedback} = req.body
-        const userId = req.userId
-        const [checkCustomer] = await db.query(`
-            SELECT customer_id 
-                FROM customers 
-                WHERE customer_id = ?`,
-            [userId])
-        if(checkCustomer.length === 0){
-            res.status(401).json({message: `Not a customer`})
-        }
+        const username = req.username
         //appointment must be approved
         const [checkAppointment] = await db.query(`
             SELECT 
@@ -1039,8 +1000,8 @@ exports.createReview = async(req,res)=>{
             JOIN customers c USING (customer_id)
             JOIN services s USING (service_id)
             WHERE s.hair_style = ?
-                AND customer_id = ? 
-                AND status = 'approved`, [hairStyle, userId])
+                AND username = ? 
+                AND status = 'approved`, [hairStyle, username])
         if(checkAppointment.length === 0){
             return res.status(404).json({
                 message: `Either no appointment record, or it's not approved yet`})
@@ -1056,17 +1017,18 @@ exports.createReview = async(req,res)=>{
         const [checkReview] = await db.query(`
             SELECT customer_id, service_id 
                 FROM reviews
-                WHERE customer_id = ? 
+                WHERE username = ? 
                 AND service_id = ?`,
-            [checkCustomer[0].customer_id, queryService[0].service_id])
+            [username, queryService[0].service_id])
         if(checkReview.length > 0){
-           return res.status(401).json({message:'Review already created'})
+           return res.status(409).json({message:'Review already created'})
         }
+        const userId = req.userId
         await db.query(`
             INSERT INTO reviews
                 (customer_id, service_id, rating, feedback)
                 VALUE(?,?,?,?)`,
-            [checkCustomer[0].customer_id, queryService[0].service_id, rating, feedback])
+            [userId, queryService[0].service_id, rating, feedback])
             return res.status(201).json({message: 'Review successfully created'})
     }catch(err){
         console.log("Error creating review", err)
