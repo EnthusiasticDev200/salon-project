@@ -11,7 +11,6 @@ dotenv.config()
 
 async function checkValidationResult(req){
     const validationErrors = validationResult(req)
-    //console.log("validationErrorfunc: ", validationErrors)
     if(!validationErrors.isEmpty()){
       return validationErrors.array().map(err=>err.msg); // return only msg prop
     }
@@ -21,13 +20,9 @@ exports.registerAdmin = async (req, res) =>{
     try{
         const apiStart = performance.now()
         const checkAdminInput = await checkValidationResult(req)
-        if(checkAdminInput){
-            return res.status(400).json(
-                { message: 'Please correct input errors', 
-                  validationErrors: checkAdminInput });
-        }
-        const {username, email, phoneNumber, role, password} = req.body
+        if(checkAdminInput) return res.status(400).json({ message: checkAdminInput })
         
+        const {username, email, phoneNumber, role, password} = req.body
         const beforeDb = performance.now()
         const [checkAdmin] = await db.execute("SELECT admin_id FROM admins WHERE email =?", [email])
         const afterDb = performance.now() - beforeDb
@@ -58,14 +53,9 @@ exports.registerAdmin = async (req, res) =>{
 exports.logInAdmin = async (req, res)=>{
     try{
         const apiStart = performance.now()
-       
         const checkAdminLoginInput = await checkValidationResult(req)
-       
-        if(checkAdminLoginInput) return res.status(400).json(
-            {
-                message: checkAdminLoginInput,
-                validationErrors: checkAdminLoginInput
-            })
+        if(checkAdminLoginInput) return res.status(400).json({ message: checkAdminLoginInput, })
+        
         const {email, password} = req.body
         // hit redis
         let cachedAdmin = await redis.get(`email:${email}`)
@@ -78,15 +68,10 @@ exports.logInAdmin = async (req, res)=>{
             const [checkAdmin] = await db.query(
             `SELECT admin_id, username, role, password_hash 
                 FROM admins 
-            WHERE email = ?
-            `, [email])
-
+             WHERE email = ?`, [email])
             const afterDb = performance.now() - beforeDb
             console.log("After query result", afterDb + 'ms')
-            if(checkAdmin.length === 0) return res.json({
-                success: false,
-                status:404,
-                error: 'Not an admin'});
+            if(checkAdmin.length === 0) return res.status(404).json({ message: 'Not an admin'});
             // capture admin db info
             const adminUser = checkAdmin[0]
             const adminData = {
@@ -114,9 +99,7 @@ exports.logInAdmin = async (req, res)=>{
         const confirmPassword = await bcrypt.compare(password, admin.password_hash)
         const afterHash = performance.now() - beforeHash
         console.log("After hash admin login result:", afterHash + 'ms')
-        if(!confirmPassword){
-            return res.json({message:"Invalid password"})
-        }
+        if(!confirmPassword) return res.json({message:"Invalid password"})
         const payload =  
             {
                 adminId: admin.adminId,
@@ -172,11 +155,10 @@ exports.logoutAdmin = async(req, res)=>{
 exports.changeAdminPassword = async(req, res)=>{
    try{
         const checkAdminPWInput = await checkValidationResult(req)
-        if(checkAdminPWInput) return res.status(400).json({
-            message: 'Please fix input error',
-            validationErrors : checkAdminPWInput
-        })
+        if(checkAdminPWInput) return res.status(400).json({ message: checkAdminPWInput })
+
         const {email, newPassword} = req.body
+
         const cachedOtp = await redis.get(`updateOtp:${email}`)
         //validate cachedEmail and email 
         if(!cachedOtp){
@@ -204,15 +186,28 @@ exports.changeAdminPassword = async(req, res)=>{
             err:err.stack})
     }
 }
+
+exports.adminProfile = async (req, res) =>{
+    try{
+        const { adminUsername } = req
+        const [myProfile] = await db.query(`
+            SELECT admin_id, username, email, phone_number, role
+            FROM admins
+            WHERE username = ?`, [adminUsername])
+        return res.status(200).json(myProfile)
+    }catch(err){
+        console.log('Error fetching admin profile', err)
+        return res.status(500).json({
+            message : "Error fetching admin profile",
+            error: err.stack})
+    }
+}
+
 exports.updateAdminProfile = async (req,res)=>{
     try{
         const updateProfileInput = await checkValidationResult(req)
-        if (updateProfileInput){ 
-            return res.status(400).json({
-                message : 'Please correct error',
-                validationErrors : updateProfileInput
-            })
-        }
+        if (updateProfileInput) return res.status(400).json({ message : updateProfileInput })
+        
         const adminUsername = req.adminUsername
         const { updateEmail, updatePhoneNumber } = req.body
         const [admin] = await db.query(`
@@ -238,11 +233,8 @@ exports.registerCustomer = async (req, res)=>{
     try{
         const apiStart = performance.now()
         const validateInput = await checkValidationResult(req)
-        if(validateInput){
-            return res.status(400).json({ 
-                message: 'Please correct input errors', 
-                validationErrors: validateInput });
-        }
+        if(validateInput) return res.status(400).json({  message: validateInput  });
+
         const {firstName, lastName, username, email, phoneNumber, password} = req.body
         const beforeDb = performance.now()
         const [customer] = await db.execute("SELECT customer_id FROM customers WHERE email =?", [email])
@@ -276,10 +268,7 @@ exports.logInCustomer =  async (req, res)=>{
     try{
         const apiStart = performance.now()
         const checkLoginInput = await checkValidationResult(req)
-        if(checkLoginInput) return res.status(400).json({
-            message: 'Please fix input error',
-            validationErrors :checkLoginInput
-            })
+        if(checkLoginInput) return res.status(400).json({  message: checkLoginInput })
         const {email, password} = req.body
         const beforeDb = performance.now()
         const [customer] = await db.query(
@@ -337,10 +326,7 @@ exports.logInCustomer =  async (req, res)=>{
 exports.changeCustomerPassword = async(req, res)=>{
     try{
         const checkChangePWInput = await checkValidationResult(req)
-        if(checkChangePWInput) return res.status(400).json({
-            message: 'Please fix input error',
-            validationErrors : checkChangePWInput
-        })
+        if(checkChangePWInput) return res.status(400).json({ message: checkChangePWInput })
         const {email, newPassword} = req.body
         // get stored OTP from Redis
         const cachedOtp = await redis.get(`updateOtp:${email}`)
@@ -458,11 +444,8 @@ exports.customerProfile = async (req, res)=>{
 exports.updateCustomerProfile = async (req, res)=>{
     try{
         const checkCusUpdateInput = await checkValidationResult(req)
-        if(checkCusUpdateInput){
-            return res.status(400).json({ 
-                message: 'Please correct input errors', 
-                validationErrors: checkCusUpdateInput });
-        }
+        if(checkCusUpdateInput) return res.status(400).json({ message: checkCusUpdateInput });
+        
         const username = req.username;
         const {
             updateFirstName, updateLastName,
@@ -483,12 +466,8 @@ exports.updateCustomerProfile = async (req, res)=>{
 exports.createServices = async (req, res)=>{
     try{
         const checkCreateServiceInput = await checkValidationResult(req)
-        if(checkCreateServiceInput){
-            return res.status(400).json({
-                message: 'Please fix input errors',
-                validationErrors : checkCreateServiceInput
-            })
-        }
+        if(checkCreateServiceInput) return res.status(400).json({ message: checkCreateServiceInput })
+        
         const {hairStyle, price} = req.body
         const [checkHairStyle] = await db.execute(`
             SELECT hair_style FROM services WHERE hair_style =?`, 
@@ -515,11 +494,8 @@ exports.registerStylist = async (req, res)=>{
     try{
         const apiStart = performance.now()
         const checkStylistInput = await checkValidationResult(req)
-        if(checkStylistInput){
-            return res.status(400).json({
-                message: "Please fix input error", 
-                validationErrors: checkStylistInput})
-        }
+        if(checkStylistInput) return res.status(400).json({ message: checkStylistInput})
+        
         const {firstName, lastName, username, email, phoneNumber, password, specialization} = req.body
         const beforeDb = performance.now()
         const [checkStylist] = await db.execute("SELECT email FROM stylists WHERE email =?", [email])
@@ -551,11 +527,8 @@ exports.loginStylist = async (req, res)=>{
     try{
         const apiStart = performance.now()
         const checkStylistLoginInput = await checkValidationResult(req)
-        if(checkStylistLoginInput){
-            return res.status(400).json({ 
-                message: 'Please correct input errors', 
-                validationErrors: checkStylistLoginInput });
-        }
+        if(checkStylistLoginInput) return res.status(400).json({ message: checkStylistLoginInput });
+        
         const {email, password} = req.body
         const beforeDb = performance.now()
         const [checkStylist] = await db.query(
@@ -614,11 +587,8 @@ exports.changeStylistPassword = async(req, res)=>{
     try{
         const apiStart = performance.now()
         const checkPasswordInput = await checkValidationResult(req)
-        if(checkPasswordInput){
-            return res.status(400).json({ 
-                message: 'Please correct input errors',
-                validationErrors: checkPasswordInput });
-        }
+        if(checkPasswordInput) return res.status(400).json({ message: checkPasswordInput });
+        
         const {email, newPassword} = req.body
         // get stored OTP on redis
         const cachedOtp = await redis.get(`updateOtp:${email}`)
@@ -745,11 +715,8 @@ exports.viewStylists = async (req, res)=>{
 exports.updateStylistProfile = async (req, res)=>{
     try{
         const checkStylistUpdateInput = await checkValidationResult(req)
-        if(checkStylistUpdateInput){
-            return res.status(400).json({ 
-                message: 'Please correct input errors', 
-                validationErrors: checkStylistUpdateInput });
-        }
+        if(checkStylistUpdateInput) return res.status(400).json({ message: checkStylistUpdateInput });
+        
         const stylistUsername = req.stylistUsername;
         const {
             updateFirstName, updateLastName,
@@ -869,11 +836,7 @@ exports.refreshStylistJWTokens = async (req, res) =>{
 exports.createAppointment = async (req, res) =>{
     try{
         const checkAppointmentInput = await checkValidationResult(req)
-        if(checkAppointmentInput){
-            return res.status(401).json({
-                message:"Please fix error",
-                validationErrors:checkAppointmentInput })
-        }
+        if(checkAppointmentInput) return res.status(401).json({ message:checkAppointmentInput })
         
         const {stylistUsername,hairStyle, appointmentDate, appointmentTime, status} = req.body
         const customerUsername = req.username
@@ -985,11 +948,8 @@ exports.viewAppointments = async (req, res)=>{
 exports.createReview = async(req,res)=>{
     try{
         const checkReviewInput = await checkValidationResult(req)
-        if(checkReviewInput){
-            return res.status(401).json({
-                message:"Please fix error", 
-                validationErrors: checkReviewInput })
-        }
+        if(checkReviewInput) return res.status(401).json({ message:checkReviewInput })
+        
         const {hairStyle, rating, feedback} = req.body
         const { userId } = req // extract from authJWT middleware
         
@@ -1051,11 +1011,8 @@ exports.sendOtp = async (req, res)=>{
     try{
         const apiStart = performance.now()
         const checkOtpInput = await checkValidationResult(req)
-        if(checkOtpInput){
-            return res.status(401).json({
-                message:"Please fix error", 
-                validationErrors: checkOtpInput })
-        }
+        if(checkOtpInput) return res.status(401).json({ message:checkOtpInput })
+        
         const {email} = req.body
         // hitting db in parallel with Promise
         const beforeDb = performance.now()
@@ -1106,11 +1063,8 @@ exports.sendOtp = async (req, res)=>{
 exports.verifyOtp = async (req, res) =>{
     try{
         const checkJwtOtpInput = await checkValidationResult(req)
-        if(checkJwtOtpInput){
-            return res.status(401).json({
-                message:"Please fix error", 
-                validationErrors:checkJwtOtpInput })
-        }
+        if(checkJwtOtpInput) return res.status(401).json({ message: checkJwtOtpInput })
+        
         const { email, enteredOtp } = req.body
         const cachedOtp = await redis.get(`otp:${email}`)
         let otp
