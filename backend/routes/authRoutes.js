@@ -1,8 +1,11 @@
 const express = require('express')
 const router = express.Router()
 
-const { authenticateJWT, requireSuperuser, customerOnly, 
-    stylistOnly, validateRefreshJWToken, adminOnly } = require('../../middlewares/auth')
+const
+{ 
+    authenticateJWT, requireSuperuser, customerOnly, 
+    stylistOnly, validateRefreshJWToken, adminOnly 
+} = require('../../middlewares/auth')
 
 const {strictLimiter, mildLimiter} = require('../../middlewares/rateLimiter')
 
@@ -30,7 +33,7 @@ const
     createReview,viewReviews,
     sendOtp, verifyOtp,
     refreshAdminJWTokens, refreshCustomerJWTokens, refreshStylistJWTokens,
-    updateAdminProfile
+    updateAdminProfile, adminProfile
     
 } = require('../authController')
 
@@ -40,7 +43,7 @@ router.post('/admin/login',strictLimiter,logInAdmin)
 router.post("/admin/logout", mildLimiter,authenticateJWT,logoutAdmin)
 router.put('/admin/updatepassword', strictLimiter, validateLoginAndChangePassword, changeAdminPassword)
 router.patch('/admin/updateprofile', strictLimiter, validateAdminProfileUpdate, authenticateJWT, updateAdminProfile)
-
+router.get('/admin/profile', strictLimiter, authenticateJWT, adminOnly, adminProfile)
 //customer's endpoints
 router.post('/customer/register', strictLimiter, validateCustomer,registerCustomer)
 router.post('/customer/login',strictLimiter,logInCustomer)
