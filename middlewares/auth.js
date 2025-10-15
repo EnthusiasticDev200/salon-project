@@ -7,6 +7,10 @@ const authenticateJWT = (req, res, next)=>{
     const customerToken = req.cookies.customer_token
     const stylistToken = req.cookies.stylist_token
 
+    if( !adminToken && !customerToken && !stylistToken ){
+        return res.status(401).json({ message: 'Authorization required. Expired or invalid token!' })
+    }
+
     let decoded;
     if(adminToken){
        try{
@@ -44,7 +48,7 @@ const authenticateJWT = (req, res, next)=>{
     }
 
     if (!req.userId && !req.stylistId && !req.adminId) {
-        return res.status(401).json({ message: 'Unauthorized. Expired or invalid token!' });
+        return res.status(401).json({ message: 'Unauthorized' });
     }
     next()
 }
@@ -95,12 +99,23 @@ const requireSuperuser = (req, res, next)=>{
 
     next();
 }
+const adminOnly = async (req, res, next)=>{
+    if (!req.role || !req.adminUsername) return res.status(403).json({message:" Sorry! Strictly for admins"})
+    next()
+}
+
+
 const customerOnly = async (req, res, next)=>{
-    if (!req.userId) return res.status(403).json({message:" Sorry! Strictly for customers"})
+    if (!req.userId || !req.username) return res.status(403).json({message:" Sorry! Strictly for customers"})
+    next()
+}
+const stylistOnly = async (req, res, next)=>{
+    if (!req.stylistId || !req.stylistUsername) return res.status(403).json({message:" Sorry! Strictly for stylists"})
     next()
 }
 
 module.exports = {
     authenticateJWT, validateRefreshJWToken,
-    requireSuperuser, customerOnly
+    requireSuperuser, customerOnly, 
+    stylistOnly, adminOnly
     } //using named export
