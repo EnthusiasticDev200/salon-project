@@ -991,44 +991,38 @@ exports.createReview = async(req,res)=>{
                 validationErrors: checkReviewInput })
         }
         const {hairStyle, rating, feedback} = req.body
-        const username = req.username
+        const { userId } = req // extract from authJWT middleware
+        
         //appointment must be approved
         const [checkAppointment] = await db.query(`
             SELECT 
-		            c.customer_id, s.hair_style, status
+		            c.customer_id, s.hair_style, service_id, status
             FROM appointments
             JOIN customers c USING (customer_id)
             JOIN services s USING (service_id)
             WHERE s.hair_style = ?
-                AND username = ? 
-                AND status = 'approved`, [hairStyle, username])
+                AND c.customer_id = ? 
+                AND status = 'approved'`, [hairStyle, userId])
         if(checkAppointment.length === 0){
             return res.status(404).json({
                 message: `Either no appointment record, or it's not approved yet`})
         }
-        const [queryService] = await db.query(`
-            SELECT service_id 
-                FROM services
-                WHERE hair_style = ?`,
-            [hairStyle])
-        if(queryService.length === 0){
-            res.status(401).json({message: 'Not a service you were offered'})
-        }
+
+        const serviceId = checkAppointment[0].service_id
         const [checkReview] = await db.query(`
             SELECT customer_id, service_id 
                 FROM reviews
-                WHERE username = ? 
+                WHERE customer_id = ? 
                 AND service_id = ?`,
-            [username, queryService[0].service_id])
+            [userId, serviceId])
         if(checkReview.length > 0){
            return res.status(409).json({message:'Review already created'})
         }
-        const userId = req.userId
         await db.query(`
             INSERT INTO reviews
                 (customer_id, service_id, rating, feedback)
                 VALUE(?,?,?,?)`,
-            [userId, queryService[0].service_id, rating, feedback])
+            [userId, serviceId, rating, feedback])
             return res.status(201).json({message: 'Review successfully created'})
     }catch(err){
         console.log("Error creating review", err)
