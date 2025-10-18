@@ -94,9 +94,7 @@ const validateRefreshJWToken = (req, res, next)=>{
 }
 
 const requireSuperuser = (req, res, next)=>{
-   
-    if(req.role !== "superuser") return res.status(403).json({message:"Restricted route for superuser"})
-
+    if( !req.adminUsername || req.role !== process.env.ROLE) return res.status(403).json({message:"Restricted route for superuser"})
     next();
 }
 const adminOnly = async (req, res, next)=>{
