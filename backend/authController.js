@@ -69,7 +69,7 @@ exports.logInAdmin = async (req, res)=>{
         if(checkAdminLoginInput) return res.status(400).json({ message: checkAdminLoginInput, })
         
         const {email, password} = req.body
-
+        const beforeDb =  performance.now()
         const [checkAdmin] = await db.query(
         `SELECT admin_id, username, role, password_hash 
             FROM admins 
@@ -79,19 +79,20 @@ exports.logInAdmin = async (req, res)=>{
         if(checkAdmin.length === 0) return res.status(404).json({ message: 'Not an admin'});
         // capture admin db info
         const admin = checkAdmin[0]
-        
+
         const beforeHash = performance.now()
         const confirmPassword = await bcrypt.compare(password, admin.password_hash)
         const afterHash = performance.now() - beforeHash
         console.log("After hash admin login result:", afterHash + 'ms')
-        if(!confirmPassword) return res.json({message:"Invalid password"})
+        if(!confirmPassword) return res.status(401).json({message:"Invalid password"})
         const payload =  
             {
-                adminId: admin.adminId,
-                adminUsername: admin.adminUsername,
+                adminId: admin.admin_id,
+                adminUsername: admin.username,
                 role: admin.role,
             }
-        const refreshAdminPayload = {adminId: admin.adminId}
+
+        const refreshAdminPayload = {adminId: admin.admin_id}
         const adminToken = generateJWToken.accessToken(payload)
         const refreshAdminToken = generateJWToken.refreshToken(
             refreshAdminPayload
@@ -125,10 +126,10 @@ exports.logInAdmin = async (req, res)=>{
 }
 exports.logoutAdmin = async(req, res)=>{
     try{
-        const username = req.adminUsername
+        const adminUsername = req.adminUsername
         res.clearCookie('admin_token')
         res.clearCookie('refresh_admin_token')
-        return res.status(200).json({message:`Logout successful. Bye ${username}`}) 
+        return res.status(200).json({message:`Bye ${adminUsername}`}) 
     }catch(err){
         console.error("Error loggin out admin", err)
         return res.status(500).json({
@@ -392,7 +393,7 @@ exports.logoutCustomer = (req, res)=>{
         const username = req.username;
         res.clearCookie('customer_token')
         res.clearCookie('refresh_customer_token')
-        return res.status(200).json({message:`Logout successful. Bye ${username}`})
+        return res.status(200).json({message:`Bye ${username}`})
     }catch(err){
         console.error("Error loggin out customer", err)
         return res.status(500).json({
@@ -675,7 +676,7 @@ exports.logoutStylist = async (req, res)=>{
         const username = req.stylistUsername
         res.clearCookie('stylist_token')
         res.clearCookie('refresh_stylist_token')
-        return res.status(200).json({message:`Logout succesfully. Bye ${username}`})
+        return res.status(200).json({message:`Bye ${username}`})
     }catch(err){
         console.error('Error loggin out stylist', err)
         return res.status(500).json({
