@@ -57,43 +57,16 @@ exports.logInAdmin = async (req, res)=>{
         if(checkAdminLoginInput) return res.status(400).json({ message: checkAdminLoginInput, })
         
         const {email, password} = req.body
-        // hit redis
-        let cachedAdmin = await redis.get(`email:${email}`)
-        let admin;
-        if(cachedAdmin){
-            admin = JSON.parse(cachedAdmin) // retrieve from redis
-        }else{
-            //hit db on miss
-            const beforeDb = performance.now()
-            const [checkAdmin] = await db.query(
-            `SELECT admin_id, username, role, password_hash 
-                FROM admins 
-             WHERE email = ?`, [email])
-            const afterDb = performance.now() - beforeDb
-            console.log("After query result", afterDb + 'ms')
-            if(checkAdmin.length === 0) return res.status(404).json({ message: 'Not an admin'});
-            // capture admin db info
-            const adminUser = checkAdmin[0]
-            const adminData = {
-                adminId : adminUser.admin_id,
-                adminUsername: adminUser.username,
-                role : adminUser.role
-            }
-            // update redis
-            await redis.set(
-                `email:${email}`,
-                JSON.stringify(adminData),
-                `EX`,
-                20 * 60  * 60// 20mins
-            )
-            // admin now has cloned adminData
-            admin = {...adminData, password_hash: adminUser.password_hash} 
-        }   
-        // hit db for password
-        if(!admin.password_hash){
-            const [adminPassword] = await db.query(`SELECT password_hash FROM admins WHERE email = ?`, [email])
-            admin.password_hash = adminPassword[0].password_hash//update admin
-        }
+
+        const [checkAdmin] = await db.query(
+        `SELECT admin_id, username, role, password_hash 
+            FROM admins 
+            WHERE email = ?`, [email])
+        const afterDb = performance.now() - beforeDb
+        console.log("After query result", afterDb + 'ms')
+        if(checkAdmin.length === 0) return res.status(404).json({ message: 'Not an admin'});
+        // capture admin db info
+        const admin = checkAdmin[0]
         
         const beforeHash = performance.now()
         const confirmPassword = await bcrypt.compare(password, admin.password_hash)
@@ -130,7 +103,7 @@ exports.logInAdmin = async (req, res)=>{
             })
         const apiEnd = performance.now() - apiStart
         console.log("apiEnd admin login result:", apiEnd + 'ms')
-        return res.status(200).json({message:`Welcome ${admin.adminUsername}`})
+        return res.status(200).json({message:`Welcome ${admin.username}`})
     }catch(err){
         console.error("Error logging in admin", err)
         return res.status(500).json({
@@ -317,7 +290,7 @@ exports.logInCustomer =  async (req, res)=>{
             })
         const apiEnd = performance.now() - apiStart
         console.log("Api cus login result:", apiEnd + 'ms')
-        return res.status(200).json({message:`Login successful. Welcome ${user.username}`})
+        return res.status(200).json({message:`Welcome ${user.username}`})
     }catch(err){
         console.error("Error during customer login", err)
         return res.status(500).json({message: 'Log in error', err:err.stack})
