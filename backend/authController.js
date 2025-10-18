@@ -9,6 +9,24 @@ const otpQueue = require('../utils/worker')
 
 dotenv.config()
 
+async function existingUserEmails(email){
+    const beforeDb = performance.now()
+    const [ isAdmin, isCustomer, isStylist ] = await Promise.all([
+        db.query( `SELECT email FROM admins WHERE email = ?`, [email]),
+        db.query( `SELECT email FROM customers WHERE email = ?`, [email]),
+        db.query( `SELECT email FROM stylists WHERE email = ?`, [email]),
+     ])
+     const afterDb = performance.now() - beforeDb
+     console.log('After Parallel DB', afterDb + ' ms')
+
+     const [admin] = isAdmin;
+     const [customer] = isCustomer;
+     const [stylist] = isStylist;
+     if( admin && customer && stylist ){
+        return 'used email'
+     } return null  
+}
+
 async function checkValidationResult(req){
     const validationErrors = validationResult(req)
     if(!validationErrors.isEmpty()){
@@ -23,26 +41,20 @@ exports.registerAdmin = async (req, res) =>{
         if(checkAdminInput) return res.status(400).json({ message: checkAdminInput })
         
         const {username, email, phoneNumber, role, password} = req.body
-        const beforeDb = performance.now()
-        const [checkAdmin] = await db.execute("SELECT admin_id FROM admins WHERE email =?", [email])
-        const afterDb = performance.now() - beforeDb
-        console.log("After query admin reg result", afterDb + 'ms')
        
-        if(checkAdmin.length> 0){
-            return res.status(409).json({message:"Admin already exist"})
-        };
         const beforeHash = performance.now()
         const hashedPassword = await bcrypt.hash(password, 10)
         const afterHash = performance.now() - beforeHash
         console.log("After hash admin reg result:", afterHash + 'ms')
-        
-        await db.query
-        (`INSERT INTO admins(username, email, phone_number, role, password_hash) VALUE(?,?,?,?,?)`,
-        [username, email, phoneNumber, role, hashedPassword])
-        const apiEnd = performance.now() - apiStart
-        console.log("apiEnd admin reg result:", apiEnd + 'ms')
-        
-        return res.status(201).json({message:"Admin successfully created"});
+
+        const adminEmail = existingUserEmails(email)
+        if (adminEmail === null){
+            await db.query(`
+                INSERT INTO admins
+                    (username, email, phone_number, role, password_hash)
+                VALUE(?,?,?,?,?)`, [username, email, phoneNumber, role, hashedPassword] )
+            return res.status(201).json({message:"Admin successfully created"});
+        } return res.status(409).json({message: 'Email already in use'})            
     }catch(err){
         console.error("Registeration error: ", err)
         return res.status(500).json({
@@ -209,26 +221,24 @@ exports.registerCustomer = async (req, res)=>{
         if(validateInput) return res.status(400).json({  message: validateInput  });
 
         const {firstName, lastName, username, email, phoneNumber, password} = req.body
-        const beforeDb = performance.now()
-        const [customer] = await db.execute("SELECT customer_id FROM customers WHERE email =?", [email])
-        const afterDb = performance.now() - beforeDb
-        console.log("After query cus reg result", afterDb + 'ms')
-        if(customer.length> 0){
-            return res.status(409).json({message:"Customer already exist"})
-        };
+
         const beforeHash = performance.now()
         const hashedPassword = await bcrypt.hash(password, 10)
         const afterHash = performance.now() - beforeHash
         console.log("After hash cus reg result:", afterHash + 'ms')
-        await db.query(`
-            INSERT INTO 
-                customers(first_name, last_name, username, email, phone_number, password_hash) 
+
+        const customerEmail = existingUserEmails(email)
+        if( customerEmail === null ){
+            await db.query(`
+                INSERT INTO 
+                    customers(first_name, last_name, username, email, phone_number, password_hash) 
                 VALUE(?,?,?,?,?,?)`,
-                [firstName, lastName, username, email, phoneNumber, hashedPassword]
-        )
+                [firstName, lastName, username, email, phoneNumber, hashedPassword] )
+            return res.status(201).json({message:"Customer successfully created"});
+        } 
         const apiEnd = performance.now() - apiStart
         console.log("Api end cus reg result:", apiEnd + 'ms')
-        return res.status(201).json({message:"Customer successfully created"});
+        return res.status(409).json({message:"Email currently in use"});
     }catch(err){
         console.log('Registeration failed: ', err.message)
         return res.status(500).json({
@@ -470,26 +480,24 @@ exports.registerStylist = async (req, res)=>{
         if(checkStylistInput) return res.status(400).json({ message: checkStylistInput})
         
         const {firstName, lastName, username, email, phoneNumber, password, specialization} = req.body
-        const beforeDb = performance.now()
-        const [checkStylist] = await db.execute("SELECT email FROM stylists WHERE email =?", [email])
-        const afterDb = performance.now() - beforeDb
-        console.log("After db stylist reg result:", afterDb + 'ms')
-        if(checkStylist.length> 0){
-            return res.status(409).json({message:"STylist already exist"})
-    };
+        
         const beforeHash = performance.now()
         const hashedPassword = await bcrypt.hash(password, 10)
         const afterHash = performance.now() - beforeHash
         console.log("After hash stylist reg result:", afterHash + 'ms')
-        await db.query(`
+        
+        const stylistEmail = existingUserEmails(email)
+        if( stylistEmail === null){
+            await db.query(`
             INSERT INTO 
                 stylists(first_name, last_name, username, email, phone_number, password_hash, specialization) 
-                VALUE(?,?,?,?,?,?,?)`,
-                [firstName, lastName, username, email, phoneNumber, hashedPassword, specialization]
-        )   
+            VALUE(?,?,?,?,?,?,?)`,
+                [firstName, lastName, username, email, phoneNumber, hashedPassword, specialization] )
+            return res.status(201).json({message:"Stylist successfully created"});  
+        } 
         const apiEnd = performance.now() - apiStart
         console.log("Api stylist reg result:", apiEnd + 'ms') 
-        return res.status(201).json({message:"Stylist successfully created"});
+        return res.status(409).json({message:"Sorry! Email already used"});
     }catch(err){
         return res.status(500).json({
             message:'Error registering stylist', 
