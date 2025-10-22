@@ -109,7 +109,7 @@ exports.logInAdmin = async (req, res)=>{
                 httpOnly : true,
                 secure : process.env.NODE_ENV === 'production',
                 sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
-                maxAge : 24 * 60 * 1000
+                maxAge : 12 * 60 * 60 * 1000
             })
         const apiEnd = performance.now() - apiStart
         console.log("apiEnd admin login result:", apiEnd + 'ms')
@@ -293,7 +293,7 @@ exports.logInCustomer =  async (req, res)=>{
                 httpOnly : true,
                 secure : process.env.NODE_ENV === 'production',
                 sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
-                maxAge : 24 * 60 * 1000
+                maxAge : 12 * 60 * 60 * 1000
             })
         const apiEnd = performance.now() - apiStart
         console.log("Api cus login result:", apiEnd + 'ms')
@@ -546,7 +546,7 @@ exports.loginStylist = async (req, res)=>{
                 httpOnly : true,
                 secure : process.env.NODE_ENV === 'production',
                 sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
-                maxAge : 24 * 60 * 1000
+                maxAge : 12 * 60 * 60 * 1000
             })
         const apiEnd = performance.now() - apiStart
         console.log("Api stylist login result:", apiEnd + 'ms') 
