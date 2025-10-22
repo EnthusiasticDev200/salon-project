@@ -1,5 +1,15 @@
 const {check} = require("express-validator");
 
+function sanitizeYearFormat(value){
+    const apDate = new Date(value)
+    const isMonth = apDate.getMonth() + 1
+    const isDay = apDate.getDate()
+    const isYear = apDate.getFullYear()
+    const revampDate = new Date(`${isYear}-${isMonth}-${isDay}`).toISOString().split('T')[0]
+    
+    return revampDate
+}
+
 const validateAppointment =
 [   
     check("stylistUsername", "stylistUsername field is require").notEmpty().toLowerCase(),
@@ -8,11 +18,12 @@ const validateAppointment =
     .notEmpty()
     .isISO8601()
     .custom((value)=>{
-        const scheduleDate = new Date(value)
+        const scheduleDate = new Date( sanitizeYearFormat(value) )
         const present = new Date ()
+
         //Nullify time(H:M,S,Ms) from Date instances
-        scheduleDate.setHours(0,0,0,0)
         present.setHours(0,0,0,0)
+
         if(scheduleDate < present){
             throw new Error("Appointment date cannot be in the past")
         }
@@ -30,8 +41,9 @@ const validateAppointment =
     .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/) // HH:mm format regex,,
     //ensure time is not past logic
     .custom((value, {req})=>{
-        const appointmentDate = req.body.appointmentDate
-
+        const isAppointmentDate = req.body.appointmentDate
+        const appointmentDate = sanitizeYearFormat(isAppointmentDate)
+        
         const present = new Date()
         const presentDate = present.toISOString().split('T')[0] // without time
         const scheduleDateTime = new Date(`${appointmentDate}T${value}`)
