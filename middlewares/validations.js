@@ -1,15 +1,5 @@
 const {check} = require("express-validator");
 
-function sanitizeYearFormat(value){
-    const apDate = new Date(value)
-    const isMonth = apDate.getMonth() + 1
-    const isDay = apDate.getDate()
-    const isYear = apDate.getFullYear()
-    const revampDate = new Date(`${isYear}-${isMonth}-${isDay}`).toISOString().split('T')[0]
-    
-    return revampDate
-}
-
 const validateAppointment =
 [   
     check("stylistUsername", "stylistUsername field is require").notEmpty().toLowerCase(),
@@ -17,11 +7,13 @@ const validateAppointment =
     check("appointmentDate", "Appointmnet date is required")
     .notEmpty()
     .isISO8601()
+    .matches(/^\d{4}-\d{2}-\d{2}$/).withMessage("Date must be in 'YYYY-MM-DD' format" )
     .custom((value)=>{
-        const scheduleDate = new Date( sanitizeYearFormat(value) )
+        const scheduleDate = new Date(value)
         const present = new Date ()
 
         //Nullify time(H:M,S,Ms) from Date instances
+        scheduleDate.setHours(0,0,0,0)
         present.setHours(0,0,0,0)
 
         if(scheduleDate < present){
@@ -41,13 +33,13 @@ const validateAppointment =
     .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/) // HH:mm format regex,,
     //ensure time is not past logic
     .custom((value, {req})=>{
-        const isAppointmentDate = req.body.appointmentDate
-        const appointmentDate = sanitizeYearFormat(isAppointmentDate)
+        const appointmentDate = req.body.appointmentDate
         
         const present = new Date()
         const presentDate = present.toISOString().split('T')[0] // without time
+        
         const scheduleDateTime = new Date(`${appointmentDate}T${value}`)
-
+        
         const [hours, minutes] = value.split(':').map(Number)
         //opening and closing hours
         const openingHour = 8 // 8AM
@@ -62,8 +54,6 @@ const validateAppointment =
         
         return true
     })
-
-    
 ]
 
 const validateStylist =
