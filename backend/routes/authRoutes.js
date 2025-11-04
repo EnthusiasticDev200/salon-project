@@ -70,7 +70,7 @@ router.get("/stylist/profile", mildLimiter, authenticateJWT, stylistOnly, stylis
 router.get("/stylist/appointment",mildLimiter, authenticateJWT, stylistOnly, stylistAppointment)
 router.get('/stylist/me', mildLimiter,authenticateJWT,stylistOnly,getStylistsUsername)
 router.post('/stylist/logout', mildLimiter,authenticateJWT,stylistOnly, logoutStylist)
-router.get('/stylist/view',mildLimiter, authenticateJWT, viewStylists)
+router.get('/stylist/view',mildLimiter, viewStylists)
 router.patch('/stylist/profile/update', strictLimiter,validateStylistUpdate, authenticateJWT, stylistOnly, updateStylistProfile)
 
 
