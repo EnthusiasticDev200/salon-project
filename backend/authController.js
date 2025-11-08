@@ -1068,9 +1068,9 @@ exports.verifyOtp = async (req, res) =>{
 exports.imageUpload = async (req, res) =>{
     try{
         const  stylistId = req.stylistId
-        const { imageFile } = req.body 
+        const { File } = req.body 
 
-        console.log("image file", imageFile)
+        console.log("image file", File)
         
         const result = await cloudinary.uploader.upload(imageFile)
         console.log("user photo from ImageUpload", result)
