@@ -1068,17 +1068,17 @@ exports.verifyOtp = async (req, res) =>{
 exports.imageUpload = async (req, res) =>{
     try{
         const  stylistId = req.stylistId
-        const filePath = req.file.path // path to file 
+        const { imageFile } = req.body 
 
-        const result = await cloudinary.uploader.upload(filePath, {
-            folder : "user photos"
-        })
+        console.log("image file", imageFile)
+        
+        const result = await cloudinary.uploader.upload(imageFile)
         console.log("user photo from ImageUpload", result)
 
         const imageUrl = result.secure_url
 
         const inserToDb = await db.query(`
-            INSERT INTO images( stylist_id, image_url)
+            INSERT INTO images( stylist_id, image_url )
             VALUE (?, ?)
             `, [stylistId, imageUrl])
 
