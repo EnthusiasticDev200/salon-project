@@ -42,7 +42,6 @@ const
     imageUpload
     
 } = require('../authController')
-const upload = require('../../middlewares/imageFile')
 
 //admin's endpoints 
 router.post('/admin/register', strictLimiter ,validateAdmin, registerAdmin)
