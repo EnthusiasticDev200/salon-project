@@ -1072,7 +1072,7 @@ exports.imageUpload = async (req, res) =>{
 
         console.log("image file", File)
         
-        const result = await cloudinary.uploader.upload(imageFile)
+        const result = await cloudinary.uploader.upload(File)
         console.log("user photo from ImageUpload", result)
 
         const imageUrl = result.secure_url
