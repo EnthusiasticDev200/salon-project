@@ -3,4 +3,6 @@ const multer = require('multer');
 
 const upload = multer({ dest: 'uploads/' });
 
-module.exports = upload.single('File'); // <-- must match Postman key
+console.log("upload from Midware", upload)
+
+module.exports = upload.single('file'); // <-- must match Postman key
