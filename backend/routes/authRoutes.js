@@ -1,6 +1,11 @@
 const express = require('express')
 const router = express.Router()
 
+// upload image set-up
+const multer = require('multer');
+
+const upload = multer({ dest: 'uploads/' });
+
 const
 { 
     authenticateJWT, requireSuperuser, customerOnly, 
@@ -77,7 +82,7 @@ router.patch('/stylist/profile/update', strictLimiter,validateStylistUpdate, aut
 
 
 //upload image
-router.post("/stylist/upload", mildLimiter, authenticateJWT, upload, imageUpload)
+router.post("/stylist/upload", mildLimiter, authenticateJWT, upload.single('File'), imageUpload)
 
 // refresh token endpoint for admin
 router.post('/admin/token/refresh', mildLimiter, validateRefreshJWToken, refreshAdminJWTokens )
