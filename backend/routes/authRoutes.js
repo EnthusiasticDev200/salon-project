@@ -33,9 +33,11 @@ const
     createReview,viewReviews,
     sendOtp, verifyOtp,
     refreshAdminJWTokens, refreshCustomerJWTokens, refreshStylistJWTokens,
-    updateAdminProfile, adminProfile
+    updateAdminProfile, adminProfile,
+    imageUpload
     
 } = require('../authController')
+const imageMidware = require('../../middlewares/imageFile')
 
 //admin's endpoints 
 router.post('/admin/register', strictLimiter ,validateAdmin, registerAdmin)
@@ -73,6 +75,9 @@ router.post('/stylist/logout', mildLimiter,authenticateJWT,stylistOnly, logoutSt
 router.get('/stylist/view',mildLimiter, viewStylists)
 router.patch('/stylist/profile/update', strictLimiter,validateStylistUpdate, authenticateJWT, stylistOnly, updateStylistProfile)
 
+
+//upload image
+router.post("/stylist/upload", mildLimiter, authenticateJWT, imageMidware, imageUpload)
 
 // refresh token endpoint for admin
 router.post('/admin/token/refresh', mildLimiter, validateRefreshJWToken, refreshAdminJWTokens )

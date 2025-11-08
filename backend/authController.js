@@ -6,6 +6,7 @@ const { notifyStylist, notifyCustomer } = require('./socketHandler');
 const generateJWToken = require('../utils/token')
 const redis = require('../backend/redis')
 const otpQueue = require('../utils/worker')
+const cloudinary = require('./cloudinary')
 
 dotenv.config()
 
@@ -1061,5 +1062,35 @@ exports.verifyOtp = async (req, res) =>{
         return res.status(500).json({
             message: 'OTP validation error', 
             err:err.stack})
+    }
+}
+
+exports.imageUpload = async (req, res) =>{
+    try{
+        const  stylistId = req.stylistId
+        const filePath = req.file.path // path to file 
+
+        const result = await cloudinary.uploader.upload(filePath, {
+            folder : "user photos"
+        })
+        console.log("user photo from ImageUpload", result)
+
+        const imageUrl = result.secure_url
+
+        const inserToDb = await db.query(`
+            INSERT INTO images( stylist_id, image_url)
+            VALUE (?, ?)
+            `, [stylistId, imageUrl])
+
+        console.log("newly uploaded image", inserToDb)
+        return res.status(201).json({ message : "Images uploaded succesfully",
+            imageUrl : imageUrl
+        })
+    }catch(err){
+        console.log("stylist image upload failed", err)
+        return res.status(500).json({
+            message : "Image upload failed",
+            error : err.stack
+        })
     }
 }
