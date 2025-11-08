@@ -1068,10 +1068,18 @@ exports.verifyOtp = async (req, res) =>{
 exports.imageUpload = async (req, res) =>{
     try{
         const  stylistId = req.stylistId
-        const { File } = req.body 
+        const imagePath = req.file.path
 
-        console.log("image file", File)
+        console.log("imagePath", imagePath)
 
+        if ( !req.file) {
+            console.log('file not attached for upload', req.file)
+            return res.status(404).json(
+                {message: 'file not attached for upload'
+
+            })
+        }
+        
         // cloudinary set-up
         const options = {
             use_filename: true,
@@ -1080,14 +1088,16 @@ exports.imageUpload = async (req, res) =>{
         };
 
         
-        const result = await cloudinary.uploader.upload(File, options)
-        console.log("user photo from ImageUpload", result)
+        const uploadResponse = await cloudinary.uploader.upload(imagePath, options)
+        console.log("user photo from ImageUpload", uploadResponse)
 
-        const imageUrl = result.secure_url
+        const imageUrl = uploadResponse.secure_url
+
+        console.log('imageURL', imageUrl)
 
         const inserToDb = await db.query(`
             INSERT INTO images( stylist_id, image_url )
-            VALUE (?, ?)
+            VALUES (?, ?)
             `, [stylistId, imageUrl])
 
         console.log("newly uploaded image", inserToDb)

@@ -1,23 +1,6 @@
-const multer = require('multer')
 
+const multer = require('multer');
 
+const upload = multer({ dest: 'uploads/' });
 
-const imageMidware = async(req, res, next) =>{
-    try{
-        const upload = multer({dest : 'uploads/'})
-
-        upload.single('images')
-    
-        next()
-    }catch(err){
-        console.log("Error validating images", err)
-        return res.status(500).json({
-            message : "image validation error ",
-            error : err.stack
-        })
-    }
-}
-
-
-module.exports = imageMidware
-
+module.exports = upload.single('File'); // <-- must match Postman key

@@ -37,7 +37,7 @@ const
     imageUpload
     
 } = require('../authController')
-const imageMidware = require('../../middlewares/imageFile')
+const upload = require('../../middlewares/imageFile')
 
 //admin's endpoints 
 router.post('/admin/register', strictLimiter ,validateAdmin, registerAdmin)
@@ -77,7 +77,7 @@ router.patch('/stylist/profile/update', strictLimiter,validateStylistUpdate, aut
 
 
 //upload image
-router.post("/stylist/upload", mildLimiter, authenticateJWT, imageMidware, imageUpload)
+router.post("/stylist/upload", mildLimiter, authenticateJWT, upload, imageUpload)
 
 // refresh token endpoint for admin
 router.post('/admin/token/refresh', mildLimiter, validateRefreshJWToken, refreshAdminJWTokens )
