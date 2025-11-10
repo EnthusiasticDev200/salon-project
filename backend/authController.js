@@ -8,6 +8,8 @@ const redis = require('../backend/redis')
 const otpQueue = require('../utils/worker')
 const cloudinary = require('./cloudinary')
 
+const fs = require('fs')
+
 dotenv.config()
 
 async function existingUserEmails(email){
@@ -1070,8 +1072,6 @@ exports.imageUpload = async (req, res) =>{
         const  stylistId = req.stylistId
         const imagePath = req.file.path
 
-        console.log("imagePath", imagePath)
-
         if ( !req.file) {
             console.log('file not attached for upload', req.file)
             return res.status(404).json(
@@ -1087,20 +1087,18 @@ exports.imageUpload = async (req, res) =>{
             overwrite: true,
         };
 
-        
         const uploadResponse = await cloudinary.uploader.upload(imagePath, options)
-        console.log("user photo from ImageUpload", uploadResponse)
-
+        
         const imageUrl = uploadResponse.secure_url
 
-        console.log('imageURL', imageUrl)
-
-        const inserToDb = await db.query(`
+        await db.query(`
             INSERT INTO images( stylist_id, image_url )
             VALUES (?, ?)
             `, [stylistId, imageUrl])
 
-        console.log("newly uploaded image", inserToDb)
+        // remove image stored local temp file {dest: upload/}
+        fs.unlinkSync(req.file.path);
+        
         return res.status(201).json({ message : "Images uploaded succesfully",
             imageUrl : imageUrl
         })
