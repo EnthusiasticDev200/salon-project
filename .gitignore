@@ -1,4 +1,3 @@
-.env
 sample.js
 sampleHTML.html
 workingCustomerlogic.js
@@ -10,3 +9,4 @@ tests/
 logs/
 /frontend/
 /react_frontend/
+config.bat
